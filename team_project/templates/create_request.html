@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}お願いごとを伝える｜ここにいるよ{% endblock %}
+
+{% block extra_css %}
+<style>
+  .screen { text-align: center; }
+  .screen h1 { margin-top: 12px; }
+  .hint { color: var(--muted); font-size: .95rem; }
+  .error { color: #a3261a; font-weight: 700; min-height: 1.7em; margin: 8px 0; }
+
+  /* マイクボタン */
+  .mic-wrap { display: flex; justify-content: center; margin: 28px 0 16px; }
+  .mic {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--terracotta);
+    color: #fff;
+    font-size: 4.5rem;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(120, 60, 30, .3);
+  }
+  .mic:hover { background: var(--terracotta-dark); }
+  .mic:focus-visible { outline: 4px solid #2f6fd6; outline-offset: 5px; }
+  .mic.listening { background: #c0392b; animation: pulse 1.4s ease-out infinite; }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(192, 57, 43, .55); }
+    100% { box-shadow: 0 0 0 40px rgba(192, 57, 43, 0); }
+  }
+  .mic-label { font-size: 1.2rem; font-weight: 700; margin: 0; }
+
+  .example { margin-top: 28px; }
+  .example .card { padding: 16px 20px; color: var(--muted); }
+
+  /* 聞き取り中の文字 */
+  .live {
+    min-height: 140px;
+    text-align: left;
+    font-size: 1.3rem;
+    line-height: 1.8;
+    margin: 20px 0;
+  }
+  .live:empty::before { content: "お話しください…"; color: var(--muted); }
+
+  /* 確認カード */
+  .summary { text-align: left; margin: 20px 0 24px; }
+  .summary dl { margin: 0; }
+  .summary .row { padding: 12px 0; border-bottom: 1px dashed var(--border); }
+  .summary .row:last-child { border-bottom: 0; }
+  .summary dt { color: var(--muted); font-size: .9rem; font-weight: 700; }
+  .summary dd { margin: 2px 0 0; font-size: 1.3rem; font-weight: 700; }
+  .summary dd.missing { color: var(--terracotta); font-weight: 400; font-size: 1.05rem; }
+  .actions { display: grid; gap: 16px; }
+
+  /* 完了 */
+  .done-icon { font-size: 4.5rem; margin-top: 24px; }
+
+  /* 声が使えない場合 */
+  details.fallback { margin-top: 36px; text-align: left; color: var(--muted); font-size: .9rem; }
+  details.fallback summary { cursor: pointer; padding: 8px 0; }
+  details.fallback textarea {
+    width: 100%;
+    min-height: 100px;
+    margin: 8px 0 12px;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 1.1rem;
+    background: var(--card);
+    color: var(--text);
+  }
+  details.fallback .btn { min-height: 56px; font-size: 1rem; }
+  .spinner {
+    width: 56px; height: 56px; margin: 48px auto 16px;
+    border: 6px solid var(--border); border-top-color: var(--terracotta);
+    border-radius: 50%; animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'select_role' %}">← もどる</a>
+
+<!-- 状態A：話す -->
+<section id="state-idle" class="screen">
+  <h1 id="prompt-title">どんなことで<br>お困りですか？</h1>
+
+  <div class="mic-wrap">
+    <button type="button" id="mic-start" class="mic" aria-label="話しはじめる">🎤</button>
+  </div>
+  <p class="mic-label">ボタンを押して、お話しください</p>
+  <p id="idle-error" class="error" role="alert"></p>
+
+  <div class="example">
+    <div class="card">
+      <span class="hint">たとえば</span><br>
+      「電球を替えてほしいの」<br>
+      「世田谷区です。明日の午前中がいいわ」
+    </div>
+  </div>
+
+  <details id="fallback" class="fallback">
+    <summary>声が使えないとき</summary>
+    <p id="unsupported" class="error" hidden>このブラウザでは音声入力が使えません。下の欄に入力してください。</p>
+    <textarea id="fallback-text" placeholder="お願いしたいことを入力"></textarea>
+    <button type="button" id="fallback-send" class="btn btn-ghost">この内容で進む</button>
+  </details>
+</section>
+
+<!-- 状態B：聞き取り中 -->
+<section id="state-listening" class="screen" hidden>
+  <h1>お話しください</h1>
+  <div class="mic-wrap">
+    <button type="button" id="mic-stop" class="mic listening" aria-label="話し終わる">🎤</button>
+  </div>
+  <p class="mic-label">話し終わったら、<br>もう一度押してください</p>
+  <div id="live-text" class="card live" aria-live="polite"></div>
+</section>
+
+<!-- AIが整理中 -->
+<section id="state-processing" class="screen" hidden>
+  <div class="spinner" aria-hidden="true"></div>
+  <h1>内容を整理しています…</h1>
+</section>
+
+<!-- 状態C：確認 -->
+<section id="state-confirm" class="screen" hidden>
+  <h1>この内容で<br>よろしいですか？</h1>
+
+  <div class="card summary">
+    <dl>
+      <div class="row"><dt>💡 お願いごと</dt><dd id="out-title"></dd></div>
+      <div class="row"><dt>📍 場所</dt><dd id="out-location"></dd></div>
+      <div class="row"><dt>🕐 日時</dt><dd id="out-time"></dd></div>
+    </dl>
+  </div>
+  <p id="confirm-error" class="error" role="alert"></p>
+
+  <div class="actions">
+    <button type="button" id="btn-followup" class="btn btn-green" hidden>足りないところを話す</button>
+    <button type="button" id="btn-submit" class="btn">はい、これでお願いします</button>
+    <button type="button" id="btn-retry" class="btn btn-ghost">もう一度はじめから話す</button>
+  </div>
+</section>
+
+<!-- 状態D：送信完了 -->
+<section id="state-done" class="screen" hidden>
+  <div class="done-icon" aria-hidden="true">✅</div>
+  <h1>依頼を受け付けました</h1>
+  <p>学生さんが見つけてくれるのを、<br>お待ちください。</p>
+  <div class="actions" style="margin-top:32px">
+    <button type="button" id="btn-again" class="btn btn-ghost">もうひとつお願いする</button>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const STATES = ['idle', 'listening', 'processing', 'confirm', 'done'];
+  const CSRF = '{{ csrf_token }}';
+  const URL_STRUCTURE = "{% url 'api_structure_request' %}";
+  const URL_SUBMIT = "{% url 'api_submit_request' %}";
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  let data = { title: '', location: '', desired_time: '', raw_text: '' };
+  let mode = 'new';          // 'new' = はじめから / 'followup' = 足りない項目だけ追加
+  let recognition = null;
+  let listening = false;
+  let stoppedByUser = false;
+  let recognitionError = '';
+  let finalText = '';
+  let interimText = '';
+
+  function show(name) {
+    STATES.forEach((s) => { $('state-' + s).hidden = (s !== name); });
+    window.scrollTo(0, 0);
+  }
+
+  function postJSON(url, payload) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify(payload),
+    }).then((r) => r.json().then((j) => ({ status: r.status, body: j })));
+  }
+
+  /* ---------- 画面：話す ---------- */
+  function missingKeys() {
+    const m = [];
+    if (!data.title) m.push('title');
+    if (!data.location) m.push('location');
+    if (!data.desired_time) m.push('desired_time');
+    return m;
+  }
+
+  function setPrompt() {
+    const m = missingKeys();
+    let html = 'どんなことで<br>お困りですか？';
+    if (mode === 'followup') {
+      if (m.includes('title')) html = 'どんなことを<br>お願いしたいですか？';
+      else if (m.includes('location') && m.includes('desired_time')) html = 'お住まいの場所と、<br>いつ頃がよいか<br>教えてください';
+      else if (m.includes('location')) html = 'どちらに<br>来てもらいますか？';
+      else if (m.includes('desired_time')) html = 'いつ頃が<br>よいですか？';
+    }
+    $('prompt-title').innerHTML = html;
+  }
+
+  function goIdle(message) {
+    $('idle-error').textContent = message || '';
+    setPrompt();
+    show('idle');
+  }
+
+  /* ---------- 音声認識 ---------- */
+  function startListening() {
+    if (!SR) { $('fallback').open = true; return; }
+    finalText = '';
+    interimText = '';
+    recognitionError = '';
+    stoppedByUser = false;
+    $('live-text').textContent = '';
+    $('idle-error').textContent = '';
+
+    recognition = new SR();
+    recognition.lang = 'ja-JP';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onresult = (e) => {
+      interimText = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t; else interimText += t;
+      }
+      $('live-text').textContent = finalText + interimText;
+    };
+    recognition.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        recognitionError = 'マイクが使えません。ブラウザのマイクの許可をご確認ください。';
+      } else if (e.error === 'no-speech') {
+        recognitionError = '声が聞こえませんでした。もう一度お話しください。';
+      } else if (e.error === 'audio-capture') {
+        recognitionError = 'マイクが見つかりません。';
+      } else if (e.error !== 'aborted') {
+        recognitionError = 'うまく聞き取れませんでした。もう一度お話しください。';
+      }
+    };
+    recognition.onend = () => {
+      listening = false;
+      if (recognitionError) { goIdle(recognitionError); return; }
+      // ユーザーが止めた場合、またはブラウザが自動で止めた場合のどちらも、聞き取れた分を処理する
+      const text = (finalText + interimText).trim();
+      if (text) { processText(text); }
+      else { goIdle(stoppedByUser ? 'うまく聞き取れませんでした。もう一度お話しください。' : ''); }
+    };
+
+    try {
+      recognition.start();
+      listening = true;
+      show('listening');
+    } catch (err) {
+      goIdle('音声入力をはじめられませんでした。もう一度お試しください。');
+    }
+  }
+
+  function stopListening() {
+    if (recognition && listening) {
+      stoppedByUser = true;
+      recognition.stop();
+    }
+  }
+
+  /* ---------- AIで構造化 ---------- */
+  function processText(text) {
+    show('processing');
+    postJSON(URL_STRUCTURE, { text })
+      .then(({ status, body }) => {
+        if (status !== 200 || !body.ok) throw new Error('structure failed');
+        if (mode === 'new') {
+          data = { title: '', location: '', desired_time: '', raw_text: '' };
+        }
+        ['title', 'location', 'desired_time'].forEach((k) => {
+          if (body[k] && (mode === 'new' || !data[k])) data[k] = body[k];
+        });
+        data.raw_text = data.raw_text ? data.raw_text + '\n' + text : text;
+        renderConfirm();
+        show('confirm');
+      })
+      .catch(() => {
+        goIdle('うまく整理できませんでした。もう一度お話しください。');
+      });
+  }
+
+  /* ---------- 画面：確認 ---------- */
+  function fillField(id, value, emptyLabel) {
+    const el = $(id);
+    el.textContent = value || emptyLabel;
+    el.classList.toggle('missing', !value);
+  }
+
+  function renderConfirm() {
+    fillField('out-title', data.title, '聞き取れませんでした');
+    fillField('out-location', data.location, 'まだ決まっていません');
+    fillField('out-time', data.desired_time, 'まだ決まっていません');
+    $('confirm-error').textContent = '';
+    $('btn-submit').disabled = !data.title;
+    $('btn-followup').hidden = missingKeys().length === 0;
+  }
+
+  function submit() {
+    $('btn-submit').disabled = true;
+    postJSON(URL_SUBMIT, data)
+      .then(({ status, body }) => {
+        if (status !== 200 || !body.ok) throw new Error('submit failed');
+        show('done');
+      })
+      .catch(() => {
+        $('confirm-error').textContent = '送信できませんでした。もう一度押してください。';
+        $('btn-submit').disabled = false;
+      });
+  }
+
+  function resetAll() {
+    data = { title: '', location: '', desired_time: '', raw_text: '' };
+    mode = 'new';
+    $('fallback-text').value = '';
+    goIdle('');
+  }
+
+  /* ---------- イベント ---------- */
+  $('mic-start').addEventListener('click', startListening);
+  $('mic-stop').addEventListener('click', stopListening);
+  $('btn-submit').addEventListener('click', submit);
+  $('btn-followup').addEventListener('click', () => { mode = 'followup'; goIdle(''); });
+  $('btn-retry').addEventListener('click', resetAll);
+  $('btn-again').addEventListener('click', resetAll);
+  $('fallback-send').addEventListener('click', () => {
+    const text = $('fallback-text').value.trim();
+    if (text) { $('fallback-text').value = ''; processText(text); }
+  });
+
+  if (!SR) {
+    $('unsupported').hidden = false;
+    $('fallback').open = true;
+  }
+})();
+</script>
+{% endblock %}
