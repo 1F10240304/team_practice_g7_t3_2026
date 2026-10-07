@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学生マイページ</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 0 auto; padding: 16px; line-height: 1.6; }
+    section { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+    dt { font-weight: bold; margin-top: 8px; }
+    dd { margin: 0 0 8px; white-space: pre-wrap; }
+    form p { margin: 12px 0; }
+    input, textarea { width: 100%; box-sizing: border-box; padding: 8px; }
+    button { padding: 8px 24px; }
+  </style>
+</head>
+<body>
+  <h1>学生マイページ</h1>
+
+  <section>
+    <h2>プロフィール</h2>
+    {% if profile %}
+      <dl>
+        <dt>名前</dt><dd>{{ profile.name }}</dd>
+        <dt>大学・学年</dt><dd>{{ profile.university }}</dd>
+        <dt>自己紹介</dt><dd>{{ profile.introduction|default:"未入力" }}</dd>
+        <dt>できること</dt><dd>{{ profile.skills|default:"未入力" }}</dd>
+      </dl>
+    {% else %}
+      <p>まだプロフィールが登録されていません。下のフォームから登録してください。</p>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>{% if profile %}プロフィールを編集{% else %}プロフィールを登録{% endif %}</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">保存する</button>
+    </form>
+  </section>
+
+  <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit">ログアウト</button>
+  </form>
+</body>
+</html>
