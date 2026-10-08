@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>近くの依頼</title>
+</head>
+<body>
+  <h1>近くの依頼</h1>
+
+  <form method="get">
+    <input type="text" name="area" value="{{ area }}" placeholder="地域で絞り込み（例: 世田谷区）">
+    <button type="submit">絞り込む</button>
+  </form>
+
+  {% for r in help_requests %}
+    <div>
+      <h2>{{ r.title }}</h2>
+      <p>{{ r.area }}</p>
+      <p>{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+      <form method="post" action="{% url 'accept_request' r.pk %}">
+        {% csrf_token %}
+        <button type="submit">引き受ける</button>
+      </form>
+    </div>
+  {% empty %}
+    <p>現在、募集中の依頼はありません。</p>
+  {% endfor %}
+</body>
+</html>
