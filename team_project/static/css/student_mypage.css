@@ -1,0 +1,7 @@
+body { font-family: sans-serif; max-width: 640px; margin: 0 auto; padding: 16px; line-height: 1.6; }
+section { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+dt { font-weight: bold; margin-top: 8px; }
+dd { margin: 0 0 8px; white-space: pre-wrap; }
+form p { margin: 12px 0; }
+input, textarea { width: 100%; box-sizing: border-box; padding: 8px; }
+button { padding: 8px 24px; }

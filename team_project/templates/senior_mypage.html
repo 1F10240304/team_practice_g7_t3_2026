@@ -1,19 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>マイページ</title>
-  <style>
-    /* 高齢者向けに文字とボタンを大きめにしています */
-    body { font-family: sans-serif; font-size: 22px; max-width: 720px; margin: 0 auto; padding: 16px; line-height: 1.8; }
-    section { border: 2px solid #888; border-radius: 12px; padding: 20px; margin-bottom: 32px; }
-    dt { font-weight: bold; margin-top: 12px; }
-    dd { margin: 0 0 12px; white-space: pre-wrap; }
-    form p { margin: 16px 0; }
-    input, textarea { width: 100%; box-sizing: border-box; padding: 12px; font-size: 22px; }
-    button { padding: 16px 40px; font-size: 22px; }
-  </style>
+  <link rel="stylesheet" href="{% static 'css/senior_mypage.css' %}">
 </head>
 <body>
   <h1>マイページ</h1>
@@ -40,10 +32,5 @@
       <button type="submit">保存する</button>
     </form>
   </section>
-
-  <form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit">ログアウト</button>
-  </form>
 </body>
 </html>
