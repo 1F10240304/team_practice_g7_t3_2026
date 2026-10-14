@@ -1,0 +1,104 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ありがとうを伝える | ここにいるよ</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        
+        <!-- 【状態1】評価入力画面 -->
+        <div id="review-section" class="status-container">
+            <h2 class="question-text" style="margin-bottom: 10px;">おつかれさまでした！</h2>
+            <p class="instruction-text">来てくれた学生に<br>「ありがとう」の評価を送りましょう。</p>
+            
+            <div class="review-card">
+                <div class="student-avatar" style="font-size: 60px; margin-bottom: 10px;">🧑‍🎓</div>
+                <div style="font-size: 20px; font-weight: bold; color: #374151;">東洋 太郎 さん</div>
+                
+                <!-- 星マーク（5段階評価） -->
+                <div class="star-rating" id="star-container">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                </div>
+                
+                <!-- 選んだ星の数を保存する隠し箱（あとでデータベースに送る用） -->
+                <input type="hidden" id="rating-value" value="0">
+                
+                <!-- デモ用に少し色を変えた送信ボタン -->
+                <a href="#" id="send-review-btn" class="btn-submit" style="display: inline-block; background-color: #f97316;">
+                    評価を送る
+                </a>
+            </div>
+        </div>
+
+        <!-- 【状態2】送信完了メッセージ（最初は非表示） -->
+        <div id="thank-you-section" class="status-container thank-you-msg hidden">
+            <div style="font-size: 80px; margin-bottom: 20px;">🌸</div>
+            <h2 class="question-text" style="color: #ea580c; margin-bottom: 20px;">送信しました！</h2>
+            <p class="instruction-text">学生の活動の励みになります。<br>ご利用ありがとうございました。</p>
+            
+            <a href="{% url 'elderly_home' %}" class="btn-submit" style="display: inline-block; margin-top: 20px;">
+                ホームに戻る
+            </a>
+        </div>
+
+    </main>
+
+    <!-- 星を光らせる＆送信アニメーションのJavaScript -->
+    <script>
+        const stars = document.querySelectorAll('.star');
+        const ratingInput = document.getElementById('rating-value');
+        const sendBtn = document.getElementById('send-review-btn');
+        const reviewSection = document.getElementById('review-section');
+        const thankYouSection = document.getElementById('thank-you-section');
+
+        // ① 星をタップした時の処理
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                // タップした星の数字（1〜5）を取得
+                const value = parseInt(this.getAttribute('data-value'));
+                ratingInput.value = value;
+                
+                // タップした星より左側の星をすべて黄色にする
+                stars.forEach(s => {
+                    if (parseInt(s.getAttribute('data-value')) <= value) {
+                        s.classList.add('selected');
+                    } else {
+                        s.classList.remove('selected');
+                    }
+                });
+            });
+        });
+
+        // ② 「評価を送る」ボタンを押した時の処理
+        sendBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // そのまま別のページに飛ぶのを防ぐ
+            
+            // 星が1つも選ばれていない場合は注意する
+            if (ratingInput.value === "0") {
+                alert("星をタップして評価を選んでください。");
+                return;
+            }
+            
+            // 評価画面を隠して、送信完了メッセージを出す
+            reviewSection.classList.add('hidden');
+            thankYouSection.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
