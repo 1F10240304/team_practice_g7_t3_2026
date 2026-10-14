@@ -42,7 +42,9 @@ def _mypage_url_name(user):
     if StudentProfile.objects.filter(user=user).exists():
         return "student_mypage"
     if SeniorProfile.objects.filter(user=user).exists():
-        return "senior_mypage"
+        # 修正前： return "senior_mypage"
+        # 修正後： ログイン後は「高齢者ホーム」へ飛ばす！
+        return "elderly_home" 
     return None
 
 
@@ -140,3 +142,7 @@ def elderly_status(request):
 # ありがとう送信（レビュー）画面を表示する関数
 def elderly_review(request):
     return render(request, 'elderly_review.html')
+
+# 依頼作成（マイク）画面を表示する関数を追加！
+def create_request(request):
+    return render(request, 'create_request.html')

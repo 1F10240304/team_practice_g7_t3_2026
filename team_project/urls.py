@@ -15,5 +15,8 @@ urlpatterns = [
     path("mypage/senior/", views.senior_mypage, name="senior_mypage"),
     path('', views.index, name='index'),
     path('elderly-home/', views.elderly_home, name='elderly_home'),
+    path('create-request/', views.create_request, name='create_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
+    # ありがとう送信（レビュー）画面へのURL
+    path('elderly-review/', views.elderly_review, name='elderly_review'),
 ]
