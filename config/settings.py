@@ -127,3 +127,10 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+
+# Login
+# ログイン後は役割に応じたマイページ、ログアウト後はログイン画面へ
+
+LOGIN_REDIRECT_URL = 'mypage'
+LOGOUT_REDIRECT_URL = 'login'

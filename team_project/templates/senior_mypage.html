@@ -12,25 +12,26 @@
 
   <section>
     <h2>あなたのプロフィール</h2>
-    {% if profile %}
-      <dl>
-        <dt>お名前</dt><dd>{{ profile.name }}</dd>
-        <dt>お住まいの地域</dt><dd>{{ profile.area }}</dd>
-        <dt>自己紹介</dt><dd>{{ profile.introduction|default:"未入力" }}</dd>
-        <dt>頼みたいこと</dt><dd>{{ profile.needs|default:"未入力" }}</dd>
-      </dl>
-    {% else %}
-      <p>まだプロフィールが登録されていません。下の欄に入力して「保存する」を押してください。</p>
-    {% endif %}
+    <dl>
+      <dt>お名前</dt><dd>{{ profile.name }}</dd>
+      <dt>お住まいの地域</dt><dd>{{ profile.area }}</dd>
+      <dt>自己紹介</dt><dd>{{ profile.introduction|default:"未入力" }}</dd>
+      <dt>頼みたいこと</dt><dd>{{ profile.needs|default:"未入力" }}</dd>
+    </dl>
   </section>
 
   <section>
-    <h2>{% if profile %}プロフィールを直す{% else %}プロフィールを登録する{% endif %}</h2>
+    <h2>プロフィールを直す</h2>
     <form method="post">
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit">保存する</button>
     </form>
   </section>
+
+  <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit">ログアウト</button>
+  </form>
 </body>
 </html>

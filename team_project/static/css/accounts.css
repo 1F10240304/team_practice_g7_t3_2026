@@ -1,0 +1,10 @@
+/* ログイン・新規登録画面（高齢者も使うので文字とボタンを大きめにしています） */
+body { font-family: sans-serif; font-size: 20px; max-width: 520px; margin: 0 auto; padding: 16px; line-height: 1.7; }
+form p { margin: 16px 0; }
+input { width: 100%; box-sizing: border-box; padding: 10px; font-size: 20px; }
+button { padding: 12px 32px; font-size: 20px; }
+.helptext, .helptext ul { font-size: 16px; color: #555; }
+.errorlist { color: #c00; }
+.error { color: #c00; font-weight: bold; }
+.roles { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+.roles a { display: block; padding: 20px; border: 2px solid #888; border-radius: 12px; text-align: center; text-decoration: none; color: inherit; font-size: 22px; }
