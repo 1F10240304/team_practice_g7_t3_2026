@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="text-align: center; margin-top: 50px;">
+    <h2>利用する役割を選択してください</h2>
+    <p>あなたの役割を選んで次に進んでください。</p>
+    
+    <div style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
+        <!-- 学生用 -->
+        <div style="border: 1px solid #ccc; padding: 30px; border-radius: 8px; width: 250px;">
+            <h3>🎓 学生</h3>
+            <p style="color: #666; font-size: 0.9em;">お手伝いをしたい方</p>
+            <a href="{% url 'student_mypage' %}" style="display: block; margin-top: 20px; padding: 10px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+                学生として進む
+            </a>
+        </div>
+
+        <!-- 高齢者（シニア）用 -->
+        <div style="border: 1px solid #ccc; padding: 30px; border-radius: 8px; width: 250px;">
+            <h3>🍵 シニア</h3>
+            <p style="color: #666; font-size: 0.9em;">お手伝いを依頼したい方</p>
+            <a href="{% url 'senior_mypage' %}" style="display: block; margin-top: 20px; padding: 10px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">
+                シニアとして進む
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
