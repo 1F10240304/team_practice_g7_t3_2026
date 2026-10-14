@@ -128,5 +128,9 @@ MAILERS = {
     },
 }
 
-# ログアウト後はログイン画面に戻す
+
+# Login
+# ログイン後は役割に応じたマイページ、ログアウト後はログイン画面へ
+
+LOGIN_REDIRECT_URL = 'mypage'
 LOGOUT_REDIRECT_URL = 'login'
