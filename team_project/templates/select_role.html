@@ -1,28 +1,51 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>役割の選択 | ここにいるよ</title>
+    <!-- Tailwind CSSの読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-orange-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
 
-{% block content %}
-<div style="text-align: center; margin-top: 50px;">
-    <h2>利用する役割を選択してください</h2>
-    <p>あなたの役割を選んで次に進んでください。</p>
-    
-    <div style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
-        <!-- 学生用 -->
-        <div style="border: 1px solid #ccc; padding: 30px; border-radius: 8px; width: 250px;">
-            <h3>🎓 学生</h3>
-            <p style="color: #666; font-size: 0.9em;">お手伝いをしたい方</p>
-            <a href="{% url 'student_mypage' %}" style="display: block; margin-top: 20px; padding: 10px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
-                学生として進む
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm py-4 px-6 text-center">
+        <h1 class="text-xl font-bold text-orange-500 tracking-wider">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow flex flex-col items-center justify-center p-6 text-center">
+        <h2 class="text-2xl md:text-3xl font-bold mb-10 text-gray-700">あなたはどちらですか？</h2>
+
+        <!-- ボタンを並べる枠（スマホでは縦並び、PCでは横並び） -->
+        <div class="flex flex-col md:flex-row gap-6 w-full max-w-2xl">
+            
+            <!-- ① 高齢者向けボタン -->
+            <!-- 担当の「依頼作成ページ（create_request）」へリンクを繋いでいます -->
+            <a href="{% url 'create_request' %}" class="flex-1 bg-white border-4 border-orange-400 rounded-3xl p-10 hover:bg-orange-50 transition shadow-lg flex flex-col items-center justify-center group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform duration-200">👵</div>
+                <h3 class="text-2xl font-bold text-orange-600 mb-2">高齢者の方</h3>
+                <p class="text-gray-500 text-sm font-medium">手伝ってほしい・お話したい</p>
             </a>
+
+            <!-- ② 学生向けボタン -->
+            <!-- ※学生用のページがまだ無いので、今は「#（どこにも飛ばない）」にしています -->
+            <a href="#" class="flex-1 bg-white border-4 border-blue-400 rounded-3xl p-10 hover:bg-blue-50 transition shadow-lg flex flex-col items-center justify-center group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform duration-200">🎓</div>
+                <h3 class="text-2xl font-bold text-blue-600 mb-2">学生の方</h3>
+                <p class="text-gray-500 text-sm font-medium">スキマ時間で手伝いたい</p>
+            </a>
+
         </div>
 
-        <!-- 高齢者（シニア）用 -->
-        <div style="border: 1px solid #ccc; padding: 30px; border-radius: 8px; width: 250px;">
-            <h3>🍵 シニア</h3>
-            <p style="color: #666; font-size: 0.9em;">お手伝いを依頼したい方</p>
-            <a href="{% url 'senior_mypage' %}" style="display: block; margin-top: 20px; padding: 10px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">
-                シニアとして進む
+        <!-- 戻るリンク -->
+        <div class="mt-12">
+            <a href="{% url 'index' %}" class="text-gray-400 hover:text-gray-600 underline font-medium transition">
+                トップページに戻る
             </a>
         </div>
-    </div>
-</div>
-{% endblock %}
+    </main>
+
+</body>
+</html>
