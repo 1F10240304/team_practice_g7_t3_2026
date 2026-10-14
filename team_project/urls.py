@@ -15,4 +15,5 @@ urlpatterns = [
     path("mypage/senior/", views.senior_mypage, name="senior_mypage"),
     path('', views.index, name='index'),
     path('elderly-home/', views.elderly_home, name='elderly_home'),
+    path('elderly-status/', views.elderly_status, name='elderly_status'),
 ]

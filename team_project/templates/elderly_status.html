@@ -1,0 +1,72 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>待機中 | ここにいるよ</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        
+        <!-- 【状態1】待機中の表示（最初はここが表示される） -->
+        <div id="waiting-state" class="status-container">
+            <div class="loader"></div>
+            <h2 class="question-text" style="margin-top: 20px;">学生を探しています...</h2>
+            <p class="instruction-text">このまま、しばらくお待ちください。</p>
+            
+            <a href="{% url 'elderly_home' %}" class="back-link" style="margin-top: 50px;">依頼をキャンセルして戻る</a>
+        </div>
+
+        <!-- 【状態2】マッチング完了の表示（最初は hidden で隠している） -->
+        <div id="matched-state" class="status-container hidden">
+            <h2 class="question-text" style="color: #ea580c; margin-bottom: 20px;">マッチングしました！</h2>
+            <p class="instruction-text">以下の学生が向かいます。</p>
+            
+            <div class="student-card">
+                <div class="student-avatar">🧑‍🎓</div>
+                <div class="student-name">東洋 太郎 さん</div>
+                <div class="student-info">
+                    INIAD 3年生<br>
+                    <span style="color: #f97316; font-weight: bold;">到着予定：約10分後</span>
+                </div>
+            </div>
+
+            <!-- 作業が終わった後の「ありがとう送信（レビュー）」ページへ繋ぐボタン -->
+            <a href="#" class="btn-submit" style="margin-top: 40px; display: inline-block;">作業が終わったら押す</a>
+        </div>
+
+        <!-- ==========================================
+             学祭・プレゼン用の魔法のボタン（デモ用）
+             ※本番では消しますが、今は残しておきます
+        ========================================== -->
+        <button id="demo-match-btn" style="margin-top: 60px; padding: 10px 20px; background: #e5e7eb; border-radius: 10px; color: #9ca3af; border: none; cursor: pointer;">
+            【デモ用】学生が見つかったことにする魔法のボタン
+        </button>
+
+    </main>
+
+    <!-- 画面を切り替えるJavaScript -->
+    <script>
+        const waitingState = document.getElementById('waiting-state');
+        const matchedState = document.getElementById('matched-state');
+        const demoBtn = document.getElementById('demo-match-btn');
+
+        // デモボタンを押したら、待機画面を消して、完了画面を出す
+        demoBtn.addEventListener('click', () => {
+            waitingState.classList.add('hidden');
+            matchedState.classList.remove('hidden');
+            demoBtn.classList.add('hidden'); // ボタン自身も隠す
+        });
+    </script>
+</body>
+</html>

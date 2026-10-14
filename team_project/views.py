@@ -130,3 +130,8 @@ def index(request):
 # 高齢者ホーム画面を表示する関数
 def elderly_home(request):
     return render(request, 'elderly_home.html')
+
+
+# 待機・マッチング完了画面を表示する関数
+def elderly_status(request):
+    return render(request, 'elderly_status.html')

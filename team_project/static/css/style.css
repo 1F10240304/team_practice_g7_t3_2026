@@ -190,3 +190,67 @@ body {
     70% { transform: scale(1.1); box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
+
+
+/* =========================================
+   マッチング待機・確定ページ専用のデザイン
+========================================= */
+.status-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+/* くるくる回るローディングアニメーション */
+.loader {
+    border: 12px solid #ffedd5; /* 薄いオレンジ */
+    border-top: 12px solid #f97316; /* 濃いオレンジ */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 1.5s linear infinite;
+    margin-bottom: 30px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* マッチング成功時の学生カード */
+.student-card {
+    background-color: white;
+    border: 4px solid #fdba74;
+    border-radius: 25px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.2);
+    text-align: center;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.student-avatar {
+    font-size: 90px;
+    margin-bottom: 20px;
+}
+
+.student-name {
+    font-size: 32px;
+    font-weight: bold;
+    color: #374151;
+    margin-bottom: 10px;
+}
+
+.student-info {
+    font-size: 20px;
+    color: #6b7280;
+    line-height: 1.6;
+}
