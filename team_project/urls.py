@@ -8,4 +8,5 @@ urlpatterns = [
     # マイページ
     path("mypage/student/", views.student_mypage, name="student_mypage"),
     path("mypage/senior/", views.senior_mypage, name="senior_mypage"),
+    path('', views.index, name='index'),
 ]

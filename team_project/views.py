@@ -60,3 +60,7 @@ def student_mypage(request):
 def senior_mypage(request):
     return _mypage(request, SeniorProfile, SeniorProfileForm,
                    "senior_mypage.html", "senior_mypage")
+
+
+def index(request):
+    return render(request, 'index.html')
