@@ -1,0 +1,192 @@
+/* アプリ全体の基本設定 */
+body {
+    background-color: #fff7ed; /* 薄いオレンジの背景 */
+    color: #374151; /* 基本の文字色 */
+    font-family: sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ヘッダーのデザイン */
+.header {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 15px;
+    text-align: center;
+}
+.header-title {
+    color: #f97316;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* メイン部分の配置 */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+}
+
+/* 挨拶の文字 */
+.greeting-text {
+    color: #6b7280;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+.question-text {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 40px;
+}
+
+/* 巨大ボタンの共通デザイン */
+.btn-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 25px;
+    padding: 30px;
+    text-decoration: none;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    transition: transform 0.2s; /* マウスを乗せた時のアニメーション */
+}
+.btn-menu:hover {
+    transform: scale(1.05); /* 少し大きくする */
+}
+.btn-icon {
+    font-size: 60px;
+    margin-bottom: 10px;
+}
+
+/* ①「手伝ってほしい」ボタンの専用色 */
+.btn-help {
+    background-color: #f97316;
+    color: white;
+}
+.btn-help h3 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+}
+.btn-help p {
+    color: #ffedd5;
+    margin: 0;
+}
+
+/* ②「お話したい」ボタンの専用色 */
+.btn-talk {
+    background-color: white;
+    border: 4px solid #fb923c;
+    color: #ea580c;
+}
+.btn-talk h3 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+}
+.btn-talk p {
+    color: #f97316;
+    margin: 0;
+}
+
+/* 戻るリンク */
+.back-link {
+    margin-top: 30px;
+    color: #9ca3af;
+    text-decoration: underline;
+    font-size: 18px;
+}
+
+/* =========================================
+   依頼作成（マイク）ページ専用のデザイン
+========================================= */
+.instruction-text {
+    font-size: 18px;
+    color: #4b5563;
+    margin-bottom: 40px;
+}
+
+/* 巨大なマイクボタン */
+.btn-mic {
+    background-color: #f97316;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* マウスを乗せた時 */
+.btn-mic:hover {
+    transform: scale(1.05);
+}
+
+/* 録音中（クリックされた後）のスタイル */
+.btn-mic.recording {
+    background-color: #ef4444; /* 録音中は赤色に変化 */
+    animation: pulse 1.5s infinite; /* ドクンドクンと動かすアニメーション */
+}
+
+.mic-icon {
+    font-size: 70px;
+    margin-bottom: 10px;
+}
+
+#mic-text {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* 録音中のテキスト */
+.recording-status {
+    margin-top: 30px;
+    color: #ef4444;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+/* 話し終わった（次へ）ボタン */
+.btn-submit {
+    margin-top: 30px;
+    background-color: #10b981; /* 安心感のある優しい緑色 */
+    color: white;
+    text-decoration: none;
+    font-size: 22px;
+    font-weight: bold;
+    padding: 15px 40px;
+    border-radius: 35px;
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+    transition: transform 0.2s;
+}
+.btn-submit:hover {
+    transform: scale(1.05);
+}
+
+/* 要素を隠すための便利なクラス */
+.hidden {
+    display: none !important;
+}
+
+/* 録音中の波打つアニメーションの設定 */
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
