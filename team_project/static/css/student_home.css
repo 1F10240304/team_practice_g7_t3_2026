@@ -1,0 +1,78 @@
+/* 学生ホーム（色は style.css のオレンジに合わせています） */
+.home-content {
+    flex-grow: 1;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px;
+    box-sizing: border-box;
+}
+
+.home-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.home-top .greeting-text {
+    margin: 0;
+}
+
+.home-title {
+    font-size: 24px;
+    margin: 24px 0 12px;
+}
+
+/* 地域の絞り込み */
+.search-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.search-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 16px;
+    border: 2px solid #fed7aa;
+    border-radius: 10px;
+}
+.search-form button,
+.request-card button {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #f97316;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.search-form button:hover,
+.request-card button:hover {
+    background-color: #ea580c;
+}
+
+/* 依頼カード */
+.request-card {
+    background-color: white;
+    border: 2px solid #fed7aa;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+}
+.request-card h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+}
+.request-meta {
+    margin: 0;
+    color: #6b7280;
+}
+.request-card form {
+    margin-top: 12px;
+}
+
+.empty-text {
+    color: #6b7280;
+}

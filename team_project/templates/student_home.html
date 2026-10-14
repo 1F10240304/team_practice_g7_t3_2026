@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ホーム | ここにいるよ</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/student_home.css' %}">
+</head>
+<body>
+  <header class="header">
+    <h1 class="header-title">ここにいるよ</h1>
+  </header>
+
+  <main class="home-content">
+    <div class="home-top">
+      <p class="greeting-text">{{ profile.name }}さん、こんにちは</p>
+      <a href="{% url 'student_mypage' %}" class="page-link">マイページ</a>
+    </div>
+
+    <h2 class="home-title">近くの依頼</h2>
+
+    <form method="get" class="search-form">
+      <input type="text" name="area" value="{{ area }}" placeholder="地域で絞り込み（例: 世田谷区）">
+      <button type="submit">絞り込む</button>
+    </form>
+
+    {% for r in help_requests %}
+      <div class="request-card">
+        <h3>{{ r.title }}</h3>
+        <p class="request-meta">{{ r.area }}</p>
+        <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+        <form method="post" action="{% url 'accept_request' r.pk %}">
+          {% csrf_token %}
+          <button type="submit">引き受ける</button>
+        </form>
+      </div>
+    {% empty %}
+      <p class="empty-text">現在、募集中の依頼はありません。</p>
+    {% endfor %}
+  </main>
+</body>
+</html>

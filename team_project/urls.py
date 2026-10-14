@@ -9,11 +9,16 @@ urlpatterns = [
     path("signup/", views.select_role, name="select_role"),
     path("signup/student/", views.student_signup, name="student_signup"),
     path("signup/senior/", views.senior_signup, name="senior_signup"),
+    # ホーム
+    path("home/", views.home, name="home"),
+    path("home/student/", views.student_home, name="student_home"),
     # マイページ
     path("mypage/", views.mypage, name="mypage"),
     path("mypage/student/", views.student_mypage, name="student_mypage"),
     path("mypage/senior/", views.senior_mypage, name="senior_mypage"),
     path('', views.index, name='index'),
     path('elderly-home/', views.elderly_home, name='elderly_home'),
+    path('create-request/', views.create_request, name='create_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
+    path('elderly-review/', views.elderly_review, name='elderly_review'),
 ]

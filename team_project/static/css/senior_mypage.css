@@ -6,3 +6,4 @@ dd { margin: 0 0 12px; white-space: pre-wrap; }
 form p { margin: 16px 0; }
 input, textarea { width: 100%; box-sizing: border-box; padding: 12px; font-size: 22px; }
 button { padding: 16px 40px; font-size: 22px; }
+nav.nav { margin-bottom: 8px; }
