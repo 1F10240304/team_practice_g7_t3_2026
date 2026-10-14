@@ -125,3 +125,8 @@ def senior_mypage(request):
 
 def index(request):
     return render(request, 'index.html')
+
+
+# 高齢者ホーム画面を表示する関数
+def elderly_home(request):
+    return render(request, 'elderly_home.html')
