@@ -1,11 +1,12 @@
 from datetime import timedelta
+from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import HelpRequest, SeniorProfile, StudentProfile
+from .models import HelpRequest, SeniorProfile, StudentProfile, TalkTheme
 
 User = get_user_model()
 
@@ -491,3 +492,76 @@ class StudentAcceptedRequestsTests(TestCase):
         self.client.force_login(self.senior)
         response = self.client.get(self.url, follow=True)
         self.assertRedirects(response, reverse("elderly_home"))
+
+
+class CompleteRequestTests(TestCase):
+    """依頼の完了とトークテーマ"""
+
+    def setUp(self):
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田", university="東洋大学")
+        self.other = User.objects.create_user(username="other", password="pass")
+        StudentProfile.objects.create(user=self.other, name="鈴木", university="他大学")
+        start = timezone.now()
+        end = start + timedelta(hours=1)
+        self.help_request = HelpRequest.objects.create(
+            title="電球の交換をお願いしたいです", area="東京都北区", start_at=start, end_at=end,
+            status=HelpRequest.Status.ACCEPTED, helper=self.student)
+        self.open_request = HelpRequest.objects.create(
+            title="買い物をお願いしたいです", area="東京都北区", start_at=start, end_at=end)
+        self.url = reverse("complete_request", args=[self.help_request.pk])
+
+    def test_完了にすると状態が完了になり一覧に戻る(self):
+        self.client.force_login(self.student)
+        response = self.client.post(self.url)
+        self.assertRedirects(response, reverse("student_accepted_requests"))
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.DONE)
+
+    def test_完了にするとトークテーマが作られ一覧に表示される(self):
+        self.client.force_login(self.student)
+        self.client.post(self.url)
+        theme = TalkTheme.objects.get(help_request=self.help_request)
+        self.assertIn("明かり", theme.text)
+        self.assertContains(self.client.get(reverse("student_accepted_requests")), theme.text)
+
+    def test_AIの関数があればその文章を使う(self):
+        self.client.force_login(self.student)
+        with mock.patch("team_project.ai.generate_talk_theme", create=True,
+                        return_value="好きな季節の話"):
+            self.client.post(self.url)
+        self.assertEqual(self.help_request.talk_theme.text, "好きな季節の話")
+
+    def test_AIが失敗しても完了になる(self):
+        self.client.force_login(self.student)
+        with mock.patch("team_project.ai.generate_talk_theme", create=True,
+                        side_effect=RuntimeError("通信エラー")):
+            self.client.post(self.url)
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.DONE)
+        self.assertTrue(self.help_request.talk_theme.text)
+
+    def test_他の学生が引き受けた依頼は完了にできない(self):
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.post(self.url).status_code, 404)
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.ACCEPTED)
+
+    def test_募集中の依頼は完了にできない(self):
+        self.client.force_login(self.student)
+        url = reverse("complete_request", args=[self.open_request.pk])
+        self.assertEqual(self.client.post(url).status_code, 404)
+
+    def test_完了した依頼をもう一度完了にしてもトークテーマは1つだけ(self):
+        self.client.force_login(self.student)
+        self.client.post(self.url)
+        self.assertEqual(self.client.post(self.url).status_code, 404)
+        self.assertEqual(TalkTheme.objects.filter(help_request=self.help_request).count(), 1)
+
+    def test_ログインしていないと完了にできない(self):
+        response = self.client.post(self.url)
+        self.assertRedirects(response, f"{reverse('login')}?next={self.url}")
+
+    def test_GETでは完了にできない(self):
+        self.client.force_login(self.student)
+        self.assertEqual(self.client.get(self.url).status_code, 405)

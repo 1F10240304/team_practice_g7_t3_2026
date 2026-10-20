@@ -8,7 +8,8 @@ from django.views.decorators.http import require_POST
 
 from .forms import (SeniorProfileForm, SeniorSignupForm, StudentProfileForm,
                     StudentSignupForm)
-from .models import HelpRequest, SeniorProfile, StudentProfile
+from . import ai
+from .models import HelpRequest, SeniorProfile, StudentProfile, TalkTheme
 
 
 def _open_requests(area):
@@ -48,6 +49,56 @@ def accept_request(request, pk):
     if not accepted:
         messages.info(request, "この依頼はすでに引き受けられています。")
     return redirect("student_home")
+
+
+# AI が使えないときのトークテーマ（依頼の内容に合わせて選ぶ）
+_DEFAULT_TALK_THEMES = [
+    ("電球", "昔の家の明かりや、思い出に残っている家の話を聞かせてください"),
+    ("買い物", "昔よく行ったお店や、好きだった食べ物の話を聞かせてください"),
+    ("掃除", "家の中で一番好きな場所や、大切にしている物の話を聞かせてください"),
+    ("スマホ", "若いころの連絡の取り方や、手紙の思い出を聞かせてください"),
+    ("庭", "育てたことのある花や野菜の話を聞かせてください"),
+]
+_FALLBACK_TALK_THEME = "最近うれしかったことや、若いころの思い出を聞かせてください"
+
+
+def _talk_theme_text(help_request):
+    """完了した依頼のトークテーマの文章を作る。
+
+    AI担当が ai.py に generate_talk_theme(title) を用意したらそれを使い、
+    まだないとき・失敗したときは上の決まった文章から選ぶ。
+    """
+    generate = getattr(ai, "generate_talk_theme", None)
+    if callable(generate):
+        try:
+            text = generate(help_request.title)
+        except Exception:
+            text = ""
+        if isinstance(text, str) and text.strip():
+            return text.strip()
+
+    for keyword, theme in _DEFAULT_TALK_THEMES:
+        if keyword in help_request.title:
+            return theme
+    return _FALLBACK_TALK_THEME
+
+
+@require_POST
+@login_required
+def complete_request(request, pk):
+    """引き受けた依頼を完了にして、トークテーマを作る（POSTのみ・引き受けた学生本人だけ）"""
+    # 自分が引き受けていて、引き受け済みの依頼だけを完了にできる
+    help_request = get_object_or_404(
+        HelpRequest, pk=pk, helper=request.user, status=HelpRequest.Status.ACCEPTED
+    )
+    with transaction.atomic():
+        help_request.status = HelpRequest.Status.DONE
+        help_request.save()
+        TalkTheme.objects.get_or_create(
+            help_request=help_request,
+            defaults={"text": _talk_theme_text(help_request)},
+        )
+    return redirect("student_accepted_requests")
 
 
 def _role(user):
@@ -140,7 +191,8 @@ def student_accepted_requests(request):
         # 役割が違うページを開いたときは、自分のホームへ戻す
         return redirect("home")
 
-    my_requests = HelpRequest.objects.filter(helper=request.user).order_by("start_at")
+    my_requests = HelpRequest.objects.filter(helper=request.user).select_related(
+        "talk_theme").order_by("start_at")
     return render(request, "student_accepted_requests.html", {
         "profile": profile,
         "accepted_requests": my_requests.filter(status=HelpRequest.Status.ACCEPTED),

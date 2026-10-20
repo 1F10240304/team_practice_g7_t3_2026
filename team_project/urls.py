@@ -5,6 +5,7 @@ urlpatterns = [
     # 依頼
     path("requests/", views.request_list, name="request_list"),
     path("requests/<int:pk>/accept/", views.accept_request, name="accept_request"),
+    path("requests/<int:pk>/complete/", views.complete_request, name="complete_request"),
     # 新規登録
     path("signup/", views.select_role, name="select_role"),
     path("signup/student/", views.student_signup, name="student_signup"),
