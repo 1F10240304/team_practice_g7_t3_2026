@@ -426,3 +426,68 @@ class HelpRequestHelperTests(TestCase):
         self.student.delete()
         self.help_request.refresh_from_db()
         self.assertIsNone(self.help_request.helper)
+
+
+class StudentAcceptedRequestsTests(TestCase):
+    """引き受けた学生の記録と、引き受けた依頼の一覧"""
+
+    def setUp(self):
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田", university="東洋大学")
+        self.other = User.objects.create_user(username="other", password="pass")
+        StudentProfile.objects.create(user=self.other, name="鈴木", university="他大学")
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤", area="北区")
+        start = timezone.now()
+        end = start + timedelta(hours=1)
+        self.open_request = HelpRequest.objects.create(
+            title="電球の交換", area="東京都世田谷区", start_at=start, end_at=end)
+        self.mine = HelpRequest.objects.create(
+            title="買い物の付き添い", area="東京都北区", start_at=start, end_at=end,
+            status=HelpRequest.Status.ACCEPTED, helper=self.student)
+        self.mine_done = HelpRequest.objects.create(
+            title="庭の草むしり", area="東京都北区", start_at=start, end_at=end,
+            status=HelpRequest.Status.DONE, helper=self.student)
+        HelpRequest.objects.create(
+            title="他の学生の依頼", area="東京都北区", start_at=start, end_at=end,
+            status=HelpRequest.Status.ACCEPTED, helper=self.other)
+        self.url = reverse("student_accepted_requests")
+
+    def test_引き受けると自分がhelperとして記録される(self):
+        self.client.force_login(self.student)
+        self.client.post(reverse("accept_request", args=[self.open_request.pk]))
+        self.open_request.refresh_from_db()
+        self.assertEqual(self.open_request.helper, self.student)
+
+    def test_引き受け済みの依頼のhelperは書き換わらない(self):
+        self.client.force_login(self.other)
+        self.client.post(reverse("accept_request", args=[self.mine.pk]))
+        self.mine.refresh_from_db()
+        self.assertEqual(self.mine.helper, self.student)
+
+    def test_自分が引き受けた依頼だけが表示される(self):
+        self.client.force_login(self.student)
+        response = self.client.get(self.url)
+        self.assertContains(response, "買い物の付き添い")
+        self.assertContains(response, "庭の草むしり")
+        self.assertNotContains(response, "他の学生の依頼")
+        self.assertNotContains(response, "電球の交換")
+
+    def test_引き受け済みと完了に分かれる(self):
+        self.client.force_login(self.student)
+        response = self.client.get(self.url)
+        self.assertEqual(list(response.context["accepted_requests"]), [self.mine])
+        self.assertEqual(list(response.context["done_requests"]), [self.mine_done])
+
+    def test_引き受けた依頼が一覧に出る(self):
+        self.client.force_login(self.student)
+        self.client.post(reverse("accept_request", args=[self.open_request.pk]))
+        self.assertContains(self.client.get(self.url), "電球の交換")
+
+    def test_ログインしていないと開けない(self):
+        self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?next={self.url}")
+
+    def test_高齢者が開くと自分のホームに戻される(self):
+        self.client.force_login(self.senior)
+        response = self.client.get(self.url, follow=True)
+        self.assertRedirects(response, reverse("elderly_home"))

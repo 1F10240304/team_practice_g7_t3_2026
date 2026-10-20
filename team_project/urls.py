@@ -12,6 +12,8 @@ urlpatterns = [
     # ホーム
     path("home/", views.home, name="home"),
     path("home/student/", views.student_home, name="student_home"),
+    path("home/student/accepted/", views.student_accepted_requests,
+         name="student_accepted_requests"),
     # マイページ
     path("mypage/", views.mypage, name="mypage"),
     path("mypage/student/", views.student_mypage, name="student_mypage"),
