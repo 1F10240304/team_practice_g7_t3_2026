@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -32,13 +33,20 @@ def request_list(request):
 
 
 @require_POST
+@login_required
 def accept_request(request, pk):
-    """依頼を引き受ける（POSTのみ）"""
-    help_request = get_object_or_404(
-        HelpRequest, pk=pk, status=HelpRequest.Status.OPEN
-    )
-    help_request.status = HelpRequest.Status.ACCEPTED
-    help_request.save()
+    """依頼を引き受ける（POSTのみ・ログインした学生だけ）"""
+    if _role(request.user) != "student":
+        # 学生以外は引き受けられないので、自分のホームへ戻す
+        return redirect("home")
+
+    get_object_or_404(HelpRequest, pk=pk)
+    # 募集中のときだけ更新する。2人が同時に押しても、引き受けられるのは1人だけ
+    accepted = HelpRequest.objects.filter(
+        pk=pk, status=HelpRequest.Status.OPEN
+    ).update(status=HelpRequest.Status.ACCEPTED)
+    if not accepted:
+        messages.info(request, "この依頼はすでに引き受けられています。")
     return redirect("student_home")
 
 
