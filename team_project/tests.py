@@ -315,6 +315,37 @@ class ProfileAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class HelpRequestAdminTests(TestCase):
+    """管理画面で依頼を見られること"""
+
+    def setUp(self):
+        admin_user = User.objects.create_superuser(username="admin", password="pass")
+        self.client.force_login(admin_user)
+        start = timezone.now()
+        end = start + timedelta(hours=1)
+        HelpRequest.objects.create(
+            title="電球の交換", area="東京都世田谷区", start_at=start, end_at=end)
+        HelpRequest.objects.create(
+            title="買い物の付き添い", area="東京都北区", start_at=start, end_at=end,
+            status=HelpRequest.Status.ACCEPTED)
+        self.url = reverse("admin:team_project_helprequest_changelist")
+
+    def test_依頼の一覧が開ける(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "電球の交換")
+        self.assertContains(response, "買い物の付き添い")
+
+    def test_状態で絞り込める(self):
+        response = self.client.get(self.url, {"status__exact": "accepted"})
+        self.assertContains(response, "買い物の付き添い")
+        self.assertNotContains(response, "電球の交換")
+
+    def test_地域で検索できる(self):
+        response = self.client.get(self.url, {"q": "世田谷"})
+        self.assertContains(response, "電球の交換")
+        self.assertNotContains(response, "買い物の付き添い")
+
+
 class AcceptRequestTests(TestCase):
     """依頼の引き受け"""
 
