@@ -400,3 +400,29 @@ class AcceptRequestTests(TestCase):
         self.client.force_login(self.student)
         response = self.client.post(reverse("accept_request", args=[9999]))
         self.assertEqual(response.status_code, 404)
+
+
+class HelpRequestHelperTests(TestCase):
+    """依頼を引き受けた学生（helper）"""
+
+    def setUp(self):
+        self.student = User.objects.create_user(username="student", password="pass")
+        start = timezone.now()
+        self.help_request = HelpRequest.objects.create(
+            title="電球の交換", area="東京都世田谷区",
+            start_at=start, end_at=start + timedelta(hours=1))
+
+    def test_作ったばかりの依頼は引き受けた学生が空(self):
+        self.assertIsNone(self.help_request.helper)
+
+    def test_引き受けた学生を記録して学生側からたどれる(self):
+        self.help_request.helper = self.student
+        self.help_request.save()
+        self.assertEqual(list(self.student.helped_requests.all()), [self.help_request])
+
+    def test_学生のアカウントが消えても依頼は残る(self):
+        self.help_request.helper = self.student
+        self.help_request.save()
+        self.student.delete()
+        self.help_request.refresh_from_db()
+        self.assertIsNone(self.help_request.helper)
