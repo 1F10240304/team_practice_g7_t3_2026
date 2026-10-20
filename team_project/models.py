@@ -24,6 +24,11 @@ class HelpRequest(models.Model):
         blank=True,
         related_name="helped_requests",
     )
+    senior = models.ForeignKey(
+        "SeniorProfile", on_delete=models.CASCADE,
+        related_name="help_requests", null=True, blank=True,
+        verbose_name="依頼した高齢者",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
 

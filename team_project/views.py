@@ -254,7 +254,8 @@ def elderly_status(request):
 def elderly_review(request):
     return render(request, 'elderly_review.html')
 
-
-# 依頼作成（マイク）画面を表示する関数
+# 依頼を作成する画面（音声入力）を表示する関数
+@login_required
 def create_request(request):
-    return render(request, 'create_request.html')
+    return render(request, 'elderly_request_create.html')
+

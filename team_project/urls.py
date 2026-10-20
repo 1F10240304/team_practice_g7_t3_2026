@@ -23,5 +23,7 @@ urlpatterns = [
     path('elderly-home/', views.elderly_home, name='elderly_home'),
     path('create-request/', views.create_request, name='create_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
+    path('elderly-review/', views.elderly_review, name='elderly_review'),   # ← 追加
+    path('requests/new/', views.create_request, name='create_request'),     # ← 追加
     path('elderly-review/', views.elderly_review, name='elderly_review'),
 ]
