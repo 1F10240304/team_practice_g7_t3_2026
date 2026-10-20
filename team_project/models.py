@@ -15,6 +15,15 @@ class HelpRequest(models.Model):
     start_at = models.DateTimeField("希望開始")
     end_at = models.DateTimeField("希望終了")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    # 依頼を引き受けた学生（募集中のあいだは空）
+    helper = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="引き受けた学生",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="helped_requests",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
 
