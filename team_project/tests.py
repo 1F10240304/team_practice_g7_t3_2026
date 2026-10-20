@@ -313,3 +313,90 @@ class ProfileAdminTests(TestCase):
     def test_高齢者プロフィールの一覧が開ける(self):
         response = self.client.get(reverse("admin:team_project_seniorprofile_changelist"))
         self.assertEqual(response.status_code, 200)
+
+
+class HelpRequestAdminTests(TestCase):
+    """管理画面で依頼を見られること"""
+
+    def setUp(self):
+        admin_user = User.objects.create_superuser(username="admin", password="pass")
+        self.client.force_login(admin_user)
+        start = timezone.now()
+        end = start + timedelta(hours=1)
+        HelpRequest.objects.create(
+            title="電球の交換", area="東京都世田谷区", start_at=start, end_at=end)
+        HelpRequest.objects.create(
+            title="買い物の付き添い", area="東京都北区", start_at=start, end_at=end,
+            status=HelpRequest.Status.ACCEPTED)
+        self.url = reverse("admin:team_project_helprequest_changelist")
+
+    def test_依頼の一覧が開ける(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "電球の交換")
+        self.assertContains(response, "買い物の付き添い")
+
+    def test_状態で絞り込める(self):
+        response = self.client.get(self.url, {"status__exact": "accepted"})
+        self.assertContains(response, "買い物の付き添い")
+        self.assertNotContains(response, "電球の交換")
+
+    def test_地域で検索できる(self):
+        response = self.client.get(self.url, {"q": "世田谷"})
+        self.assertContains(response, "電球の交換")
+        self.assertNotContains(response, "買い物の付き添い")
+
+
+class AcceptRequestTests(TestCase):
+    """依頼の引き受け"""
+
+    def setUp(self):
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田", university="東洋大学")
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤", area="北区")
+        start = timezone.now()
+        self.help_request = HelpRequest.objects.create(
+            title="電球の交換", area="東京都世田谷区",
+            start_at=start, end_at=start + timedelta(hours=1))
+        self.url = reverse("accept_request", args=[self.help_request.pk])
+
+    def test_ログインしていないと引き受けられない(self):
+        response = self.client.post(self.url)
+        self.assertRedirects(response, f"{reverse('login')}?next={self.url}")
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.OPEN)
+
+    def test_高齢者は引き受けられない(self):
+        self.client.force_login(self.senior)
+        response = self.client.post(self.url)
+        self.assertRedirects(response, reverse("home"), target_status_code=302)
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.OPEN)
+
+    def test_GETでは引き受けられない(self):
+        self.client.force_login(self.student)
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.OPEN)
+
+    def test_引き受け済みの依頼をもう一度引き受けても変わらない(self):
+        self.help_request.status = HelpRequest.Status.ACCEPTED
+        self.help_request.save()
+        self.client.force_login(self.student)
+        response = self.client.post(self.url)
+        self.assertRedirects(response, reverse("student_home"))
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.ACCEPTED)
+
+    def test_完了した依頼は募集中に戻らない(self):
+        self.help_request.status = HelpRequest.Status.DONE
+        self.help_request.save()
+        self.client.force_login(self.student)
+        self.client.post(self.url)
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.DONE)
+
+    def test_存在しない依頼は404(self):
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("accept_request", args=[9999]))
+        self.assertEqual(response.status_code, 404)
