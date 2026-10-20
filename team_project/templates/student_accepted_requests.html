@@ -25,6 +25,10 @@
         <h3>{{ r.title }}</h3>
         <p class="request-meta">{{ r.area }}</p>
         <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+        <form method="post" action="{% url 'complete_request' r.pk %}">
+          {% csrf_token %}
+          <button type="submit">完了にする</button>
+        </form>
       </div>
     {% empty %}
       <p class="empty-text">引き受けている依頼はありません。</p>
@@ -36,6 +40,9 @@
         <h3>{{ r.title }}</h3>
         <p class="request-meta">{{ r.area }}</p>
         <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+        {% if r.talk_theme %}
+          <p class="request-meta">トークテーマ: {{ r.talk_theme.text }}</p>
+        {% endif %}
       </div>
     {% empty %}
       <p class="empty-text">完了した依頼はまだありません。</p>

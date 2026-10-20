@@ -49,3 +49,18 @@ class SeniorProfile(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TalkTheme(models.Model):
+    """依頼が完了したときに作る、学生と高齢者の会話のきっかけ（トークテーマ）"""
+    help_request = models.OneToOneField(
+        HelpRequest,
+        verbose_name="依頼",
+        on_delete=models.CASCADE,
+        related_name="talk_theme",
+    )
+    text = models.TextField("トークテーマ")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.text
