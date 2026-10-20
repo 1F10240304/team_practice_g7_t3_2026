@@ -44,7 +44,7 @@ def accept_request(request, pk):
     # 募集中のときだけ更新する。2人が同時に押しても、引き受けられるのは1人だけ
     accepted = HelpRequest.objects.filter(
         pk=pk, status=HelpRequest.Status.OPEN
-    ).update(status=HelpRequest.Status.ACCEPTED)
+    ).update(status=HelpRequest.Status.ACCEPTED, helper=request.user)
     if not accepted:
         messages.info(request, "この依頼はすでに引き受けられています。")
     return redirect("student_home")
@@ -129,6 +129,22 @@ def student_home(request):
         "profile": profile,
         "help_requests": _open_requests(area),
         "area": area,
+    })
+
+
+@login_required
+def student_accepted_requests(request):
+    """学生が引き受けた依頼の一覧（引き受け済みと完了に分けて表示）"""
+    profile = StudentProfile.objects.filter(user=request.user).first()
+    if profile is None:
+        # 役割が違うページを開いたときは、自分のホームへ戻す
+        return redirect("home")
+
+    my_requests = HelpRequest.objects.filter(helper=request.user).order_by("start_at")
+    return render(request, "student_accepted_requests.html", {
+        "profile": profile,
+        "accepted_requests": my_requests.filter(status=HelpRequest.Status.ACCEPTED),
+        "done_requests": my_requests.filter(status=HelpRequest.Status.DONE),
     })
 
 

@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>引き受けた依頼 | ここにいるよ</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/student_home.css' %}">
+</head>
+<body>
+  <header class="header">
+    <h1 class="header-title">ここにいるよ</h1>
+  </header>
+
+  <main class="home-content">
+    <div class="home-top">
+      <p class="greeting-text">{{ profile.name }}さんが引き受けた依頼</p>
+      <a href="{% url 'student_home' %}" class="page-link">ホームへ</a>
+    </div>
+
+    <h2 class="home-title">これからの依頼</h2>
+    {% for r in accepted_requests %}
+      <div class="request-card">
+        <h3>{{ r.title }}</h3>
+        <p class="request-meta">{{ r.area }}</p>
+        <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+      </div>
+    {% empty %}
+      <p class="empty-text">引き受けている依頼はありません。</p>
+    {% endfor %}
+
+    <h2 class="home-title">完了した依頼</h2>
+    {% for r in done_requests %}
+      <div class="request-card">
+        <h3>{{ r.title }}</h3>
+        <p class="request-meta">{{ r.area }}</p>
+        <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+      </div>
+    {% empty %}
+      <p class="empty-text">完了した依頼はまだありません。</p>
+    {% endfor %}
+  </main>
+</body>
+</html>
