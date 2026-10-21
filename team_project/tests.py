@@ -283,10 +283,17 @@ class LoginLogoutTests(TestCase):
         response = self.client.get(reverse("login"))
         self.assertContains(response, reverse("select_role"))
 
-    def test_ログインするとマイページへ(self):
+    def test_学生がログインすると学生ホームへ(self):
         response = self.client.post(reverse("login"), {"username": "taro", "password": "pass"},
                                     follow=True)
-        self.assertRedirects(response, reverse("student_mypage"))
+        self.assertRedirects(response, reverse("student_home"))
+
+    def test_高齢者がログインすると高齢者ホームへ(self):
+        senior = User.objects.create_user(username="ichiro", password="pass")
+        SeniorProfile.objects.create(user=senior, name="佐藤", area="北区")
+        response = self.client.post(reverse("login"), {"username": "ichiro", "password": "pass"},
+                                    follow=True)
+        self.assertRedirects(response, reverse("elderly_home"))
 
     def test_パスワードが違うとログインできない(self):
         response = self.client.post(reverse("login"), {"username": "taro", "password": "wrong"})
