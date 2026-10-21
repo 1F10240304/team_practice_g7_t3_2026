@@ -1,51 +1,32 @@
-<!-- Djangoに「Static（静的）ファイルを使うよ！」と宣言する呪文（必ず1行目に書く） -->
-{% load static %}
+{% extends 'base.html' %}
 
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ホーム | ここにいるよ</title>
+{% block content %}
+<div style="text-align: center; margin-top: 50px;">
+    <h2>シニア向けホーム画面</h2>
+    <p style="font-size: 1.2em; margin-bottom: 40px;">こんにちは！今日はどのようなお手伝いが必要ですか？</p>
     
-    <!-- さっき作った style.css を読み込む -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
-
-    <!-- ヘッダー -->
-    <header class="header">
-        <h1 class="header-title">ここにいるよ</h1>
-    </header>
-
-    <!-- メインコンテンツ -->
-    <main class="main-content">
-        <!-- ユーザーへの声かけ -->
-        <div>
-            <p class="greeting-text">こんにちは！</p>
-            <h2 class="question-text">今日はどうしますか？</h2>
-        </div>
-
-        <!-- ① 手伝ってほしいボタン -->
-        <a href="{% url 'create_request' %}" class="btn-menu btn-help">
-            <div class="btn-icon">🙋‍♀️</div>
-            <h3>手伝ってほしい</h3>
-            <p>買い物、電球交換、ちょっとした作業など</p>
+    <!-- ボタンを縦に並べて押しやすくする -->
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 30px;">
+        
+        <!-- お願いを作成するボタン -->
+        <!-- urls.py で設定している依頼作成ページのURL名（例: create_request）を指定 -->
+        <a href="{% url 'create_request' %}" style="display: block; width: 80%; max-width: 400px; padding: 25px; background-color: #ff9800; color: white; text-decoration: none; border-radius: 12px; font-size: 1.5em; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            📝 新しくお願いをする
         </a>
 
-        <!-- ② お話したいボタン -->
-        <a href="#" class="btn-menu btn-talk">
-            <div class="btn-icon">☕</div>
-            <h3>お話したい</h3>
-            <p>学生と一緒にお茶や散歩、趣味の共有など</p>
+        <!-- これまでのお願いを確認するボタン -->
+        <!-- urls.py で設定している依頼一覧ページのURL名（例: request_list）を指定 -->
+        <a href="{% url 'request_list' %}" style="display: block; width: 80%; max-width: 400px; padding: 25px; background-color: #4caf50; color: white; text-decoration: none; border-radius: 12px; font-size: 1.5em; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            📋 お願いしたことを見る
         </a>
+        
+    </div>
 
-        <!-- マイページへのリンク -->
-        <a href="{% url 'senior_mypage' %}" class="page-link">マイページ</a>
-
-        <!-- 戻るリンク -->
-        <a href="{% url 'select_role' %}" class="back-link">役割選択に戻る</a>
-    </main>
-
-</body>
-</html>
+    <!-- 役割選択に戻るリンク（テスト用・不要なら削除してください） -->
+    <div style="margin-top: 50px;">
+        <a href="{% url 'select_role' %}" style="color: #666; text-decoration: underline; font-size: 1.1em;">
+            役割選択画面に戻る
+        </a>
+    </div>
+</div>
+{% endblock %}

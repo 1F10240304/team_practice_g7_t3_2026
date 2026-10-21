@@ -1,0 +1,51 @@
+<!-- Djangoに「Static（静的）ファイルを使うよ！」と宣言する呪文（必ず1行目に書く） -->
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ホーム | ここにいるよ</title>
+    
+    <!-- さっき作った style.css を読み込む -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- ユーザーへの声かけ -->
+        <div>
+            <p class="greeting-text">こんにちは！</p>
+            <h2 class="question-text">今日はどうしますか？</h2>
+        </div>
+
+        <!-- ① 手伝ってほしいボタン -->
+        <a href="{% url 'create_request' %}" class="btn-menu btn-help">
+            <div class="btn-icon">🙋‍♀️</div>
+            <h3>手伝ってほしい</h3>
+            <p>買い物、電球交換、ちょっとした作業など</p>
+        </a>
+
+        <!-- ② お話したいボタン -->
+        <a href="#" class="btn-menu btn-talk">
+            <div class="btn-icon">☕</div>
+            <h3>お話したい</h3>
+            <p>学生と一緒にお茶や散歩、趣味の共有など</p>
+        </a>
+
+        <!-- マイページへのリンク -->
+        <a href="{% url 'senior_mypage' %}" class="page-link">マイページ</a>
+
+        <!-- 戻るリンク -->
+        <a href="{% url 'select_role' %}" class="back-link">役割選択に戻る</a>
+    </main>
+
+</body>
+</html>
