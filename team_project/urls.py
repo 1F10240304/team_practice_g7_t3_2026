@@ -27,4 +27,14 @@ urlpatterns = [
     path('create-request/save/', views.save_request, name='save_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
     path('elderly-review/', views.elderly_review, name='elderly_review'),
+    # requests/ の下あたりに追加してください
+    path("requests/<int:pk>/detail/", views.student_request_detail, name="student_request_detail"),
+    # requests/ の下あたりに追加してください
+    path("requests/<int:pk>/active/", views.student_session_active, name="student_session_active"),
+    path("student-review/", views.student_review, name="student_review"),
+    # 学生マイページの下あたりに追加
+    path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
+    # 学生マイページの下あたりに追加
+    path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
 ]
+

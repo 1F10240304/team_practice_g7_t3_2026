@@ -1,0 +1,80 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>依頼の詳細 | ここにいるよ</title>
+    <!-- Tailwind CSSの読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="bg-blue-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm py-4 px-6 text-center border-b border-blue-100">
+        <h1 class="text-xl font-bold text-blue-500 tracking-wider">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow flex flex-col items-center p-6 w-full max-w-md mx-auto">
+        <h2 class="text-2xl font-bold mb-6 text-gray-700 w-full text-left">依頼の詳細</h2>
+
+        <!-- 依頼詳細カード -->
+        <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-blue-100 w-full mb-8">
+            
+            <!-- 依頼者の情報 -->
+            <div class="flex items-center gap-4 border-b border-gray-100 pb-4 mb-4">
+                <div class="text-5xl">👵</div>
+                <div>
+                    <p class="text-lg font-bold text-gray-800">世田谷区のおばあちゃん</p>
+                    <p class="text-blue-500 font-medium text-sm">📍 大学から徒歩8分 (約600m)</p>
+                </div>
+            </div>
+
+            <!-- 依頼の内容 -->
+            <div class="space-y-5">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-400 mb-1">お願いしたいこと</h4>
+                    <p class="text-2xl font-bold text-gray-800">電球の交換をお願いしたいです</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-bold text-gray-400 mb-1">希望日時</h4>
+                    <p class="text-lg font-medium text-gray-700">🗓️ 6月1日(日) 午前中</p>
+                </div>
+
+                <!-- 互酬性（トークテーマ）のアピール -->
+                <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 mt-6">
+                    <p class="text-orange-600 font-bold text-sm mb-2">💡 作業後のトークテーマ候補</p>
+                    <p class="text-orange-800 font-medium">「昔の商店街の思い出について」</p>
+                    <p class="text-orange-400 text-xs mt-1">※作業完了後に、少しだけお話を伺ってみましょう！</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 
+            引き受けるボタン（フォーム）
+            バックエンドチームが作った "accept_request"（引き受け処理）へデータを送ります
+        -->
+        <form action="{% url 'accept_request' pk=1 %}" method="POST" class="w-full">
+            <!-- Django特有のセキュリティ対策の呪文 -->
+            {% csrf_token %}
+            
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-full text-xl shadow-lg transition-transform transform hover:scale-105 flex justify-center items-center gap-2">
+                <span>🤝</span> この依頼を引き受ける
+            </button>
+        </form>
+
+        <!-- 戻るリンク -->
+        <div class="mt-8">
+            <!-- 掲示板一覧（request_list）へ戻る -->
+            <a href="{% url 'request_list' %}" class="text-gray-400 hover:text-gray-600 underline font-medium transition">
+                一覧に戻る
+            </a>
+        </div>
+    </main>
+
+</body>
+</html>
