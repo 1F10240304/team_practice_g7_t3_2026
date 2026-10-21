@@ -17,56 +17,55 @@
 
     <!-- メインコンテンツ -->
     <main class="main-content">
-        
-        <!-- 【状態1】待機中の表示（最初はここが表示される） -->
-        <div id="waiting-state" class="status-container">
-            <div class="loader"></div>
-            <h2 class="question-text" style="margin-top: 20px;">学生を探しています...</h2>
-            <p class="instruction-text">このまま、しばらくお待ちください。</p>
-            
-            <a href="{% url 'elderly_home' %}" class="back-link" style="margin-top: 50px;">依頼をキャンセルして戻る</a>
+
+        <!-- 出した依頼の内容 -->
+        <div class="status-request">
+            <p class="status-request-title">{{ help_request.title }}</p>
+            <p>{{ help_request.start_at|date:"n/j（D） H:i" }} 〜 {{ help_request.end_at|date:"H:i" }}　{{ help_request.area }}</p>
         </div>
 
-        <!-- 【状態2】マッチング完了の表示（最初は hidden で隠している） -->
-        <div id="matched-state" class="status-container hidden">
-            <h2 class="question-text" style="color: #ea580c; margin-bottom: 20px;">マッチングしました！</h2>
+        <!-- 【状態1】待機中の表示（まだだれも引き受けていないとき） -->
+        <div id="waiting-state" class="status-container{% if helper_profile %} hidden{% endif %}">
+            <div class="loader"></div>
+            <h2 class="question-text">学生を探しています...</h2>
+            <p class="instruction-text">このまま、しばらくお待ちください。<br>見つかると、この画面が切り替わります。</p>
+
+            <a href="{% url 'elderly_home' %}" class="back-link">ホームに戻る</a>
+        </div>
+
+        <!-- 【状態2】マッチング完了の表示（学生が引き受けたとき） -->
+        <div id="matched-state" class="status-container{% if not helper_profile %} hidden{% endif %}">
+            <h2 class="question-text matched-title">マッチングしました！</h2>
             <p class="instruction-text">以下の学生が向かいます。</p>
-            
+
             <div class="student-card">
                 <div class="student-avatar">🧑‍🎓</div>
-                <div class="student-name">東洋 太郎 さん</div>
-                <div class="student-info">
-                    INIAD 3年生<br>
-                    <span style="color: #f97316; font-weight: bold;">到着予定：約10分後</span>
-                </div>
+                {% if helper_profile %}
+                    <div class="student-name">{{ helper_profile.name }} さん</div>
+                    <div class="student-info">{{ helper_profile.university }}</div>
+                {% else %}
+                    <!-- デモ用ボタンで表示するときの学生 -->
+                    <div class="student-name">東洋 太郎 さん</div>
+                    <div class="student-info">INIAD 3年生</div>
+                {% endif %}
             </div>
 
             <!-- 作業が終わった後の「ありがとう送信（レビュー）」ページへ繋ぐボタン -->
-            <a href="{% url 'elderly_review' %}" class="btn-submit" style="margin-top: 40px; display: inline-block;">作業が終わったら押す</a>
+            <a href="{% url 'elderly_review' %}" class="btn-submit">作業が終わったら押す</a>
         </div>
 
         <!-- ==========================================
              学祭・プレゼン用の魔法のボタン（デモ用）
              ※本番では消しますが、今は残しておきます
         ========================================== -->
-        <button id="demo-match-btn" style="margin-top: 60px; padding: 10px 20px; background: #e5e7eb; border-radius: 10px; color: #9ca3af; border: none; cursor: pointer;">
-            【デモ用】学生が見つかったことにする魔法のボタン
-        </button>
+        {% if not helper_profile %}
+            <button id="demo-match-btn" class="demo-btn" type="button">
+                【デモ用】学生が見つかったことにする魔法のボタン
+            </button>
+        {% endif %}
 
     </main>
 
-    <!-- 画面を切り替えるJavaScript -->
-    <script>
-        const waitingState = document.getElementById('waiting-state');
-        const matchedState = document.getElementById('matched-state');
-        const demoBtn = document.getElementById('demo-match-btn');
-
-        // デモボタンを押したら、待機画面を消して、完了画面を出す
-        demoBtn.addEventListener('click', () => {
-            waitingState.classList.add('hidden');
-            matchedState.classList.remove('hidden');
-            demoBtn.classList.add('hidden'); // ボタン自身も隠す
-        });
-    </script>
+    <script src="{% static 'js/elderly_status.js' %}"></script>
 </body>
 </html>

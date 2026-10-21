@@ -21,7 +21,10 @@ urlpatterns = [
     path("mypage/senior/", views.senior_mypage, name="senior_mypage"),
     path('', views.index, name='index'),
     path('elderly-home/', views.elderly_home, name='elderly_home'),
+    # 高齢者の依頼の流れ: 依頼作成（マイク） → 確認 → 保存 → 待機
     path('create-request/', views.create_request, name='create_request'),
+    path('create-request/confirm/', views.confirm_request, name='confirm_request'),
+    path('create-request/save/', views.save_request, name='save_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
     path('elderly-review/', views.elderly_review, name='elderly_review'),
 ]

@@ -21,8 +21,12 @@
         <h2 class="question-text">声でたすけて</h2>
         <p class="instruction-text">
             マイクを押して、困りごとを話してください。<br>
-            <span style="font-size: 14px; color: #9ca3af;">（例：「電球を替えてほしい」「重い荷物を運んでほしい」）</span>
+            <span class="instruction-example">（例：「明日の午前中に電球を替えてほしい」）</span>
         </p>
+
+        {% if error %}
+            <p class="form-error">{{ error }}</p>
+        {% endif %}
 
         <!-- 巨大なマイクボタン -->
         <!-- type="button" にすることで、勝手にページが切り替わるのを防ぎます -->
@@ -36,44 +40,25 @@
             録音しています...
         </div>
 
-        <!-- 次の画面へ進むボタン（最初は非表示） -->
-        <!-- ※あとでAI要約確認ページ（elderly_request_confirm）へ繋ぎます -->
-        <a href="#" id="submit-btn" class="btn-submit hidden">
-            話し終わった（次へ）
-        </a>
+        <!-- 話した内容は下の欄に入る。マイクが使えないときは文字で書ける -->
+        <form method="post" action="{% url 'confirm_request' %}" class="request-form">
+            {% csrf_token %}
+            <label for="request-text" class="request-label">話した内容（書いて直すこともできます）</label>
+            <textarea id="request-text" name="text" class="request-text" rows="3"></textarea>
+            <p id="mic-unsupported" class="instruction-example hidden">
+                このブラウザでは声で入力できません。上の欄に書いてください。
+            </p>
+
+            <!-- 次の画面（確認）へ進むボタン（内容が入るまで非表示） -->
+            <button type="submit" id="submit-btn" class="btn-submit hidden">
+                話し終わった（次へ）
+            </button>
+        </form>
 
         <!-- 戻るリンク -->
         <a href="{% url 'elderly_home' %}" class="back-link">ホームに戻る</a>
     </main>
 
-    <!-- 画面に動きをつけるJavaScript（デモ用） -->
-    <script>
-        // HTMLの中のボタンやテキストを見つけてくる
-        const micBtn = document.getElementById('mic-btn');
-        const micText = document.getElementById('mic-text');
-        const statusText = document.getElementById('recording-status');
-        const submitBtn = document.getElementById('submit-btn');
-        
-        // 録音中かどうかの状態を保存する変数
-        let isRecording = false;
-
-        // マイクボタンがクリックされた時の処理
-        micBtn.addEventListener('click', () => {
-            if (!isRecording) {
-                // 【録音スタート】
-                isRecording = true;
-                micBtn.classList.add('recording'); // 赤くしてドクンドクンさせる
-                micText.innerText = "録音中...";
-                statusText.classList.remove('hidden'); // 「録音しています」の文字を出す
-                submitBtn.classList.remove('hidden');  // 「次へ」ボタンを出す
-            } else {
-                // 【録音ストップ】（もう一度押した場合）
-                isRecording = false;
-                micBtn.classList.remove('recording'); // 元のオレンジに戻す
-                micText.innerText = "もう一度やり直す";
-                statusText.classList.add('hidden'); // 文字を隠す
-            }
-        });
-    </script>
+    <script src="{% static 'js/elderly_request_create.js' %}"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, time, timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .models import HelpRequest, SeniorProfile, StudentProfile, TalkTheme
+from .views import _schedule_from_text
 
 User = get_user_model()
 
@@ -572,3 +573,111 @@ class CompleteRequestTests(TestCase):
     def test_GETでは完了にできない(self):
         self.client.force_login(self.student)
         self.assertEqual(self.client.get(self.url).status_code, 405)
+
+
+@mock.patch("team_project.ai._call_ai_mop", return_value=None)  # テストではAIに通信しない
+class ElderlyRequestFlowTests(TestCase):
+    """高齢者の依頼の流れ: ホーム → 依頼作成（マイク） → 確認 → 待機"""
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        self.save_data = {
+            "title": "電球の交換をお願いしたいです", "area": "東京都北区",
+            "date": "2026-11-01", "start_time": "09:00", "end_time": "12:00",
+            "text": "明日の午前中に電球を替えてほしい", "desired_time": "明日 午前中",
+        }
+
+    def test_ホームから依頼作成へ行ける(self, _):
+        self.client.force_login(self.senior)
+        self.assertContains(self.client.get(reverse("elderly_home")),
+                            f'href="{reverse("create_request")}"')
+        response = self.client.get(reverse("create_request"))
+        self.assertContains(response, f'action="{reverse("confirm_request")}"')
+
+    def test_話した内容から確認画面が作られる(self, _):
+        self.client.force_login(self.senior)
+        response = self.client.post(reverse("confirm_request"),
+                                    {"text": "明日の午前中に電球を替えてほしい"})
+        self.assertContains(response, "電球の交換をお願いしたいです")
+        self.assertContains(response, 'value="東京都北区"')  # 場所はプロフィールの地域
+        tomorrow = timezone.localdate() + timedelta(days=1)
+        self.assertContains(response, f'value="{tomorrow.isoformat()}"')
+        self.assertContains(response, 'value="09:00"')
+        self.assertContains(response, f'action="{reverse("save_request")}"')
+
+    def test_何も話していないと依頼作成に戻る(self, _):
+        self.client.force_login(self.senior)
+        response = self.client.post(reverse("confirm_request"), {"text": "  "})
+        self.assertContains(response, "お願いしたいことを話すか、書いてください。")
+        self.assertTemplateUsed(response, "elderly_request_create.html")
+
+    def test_これでお願いすると保存されて待機画面へ(self, _):
+        self.client.force_login(self.senior)
+        response = self.client.post(reverse("save_request"), self.save_data)
+        self.assertRedirects(response, reverse("elderly_status"))
+        help_request = HelpRequest.objects.get()
+        self.assertEqual(help_request.requester, self.senior)
+        self.assertEqual(help_request.status, HelpRequest.Status.OPEN)
+        self.assertEqual(timezone.localtime(help_request.start_at).hour, 9)
+        self.assertContains(self.client.get(reverse("elderly_status")), "学生を探しています")
+
+    def test_終わりの時間が始まりより前だと保存しない(self, _):
+        self.client.force_login(self.senior)
+        data = {**self.save_data, "start_time": "12:00", "end_time": "09:00"}
+        response = self.client.post(reverse("save_request"), data)
+        self.assertContains(response, "終わりの時間は、始まりの時間より後にしてください。")
+        self.assertFalse(HelpRequest.objects.exists())
+
+    def test_保存した依頼は学生ホームに出る(self, _):
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        self.client.force_login(self.student)
+        self.assertContains(self.client.get(reverse("student_home")),
+                            "電球の交換をお願いしたいです")
+
+    def test_学生が引き受けると待機画面に学生の名前が出る(self, _):
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        HelpRequest.objects.update(status=HelpRequest.Status.ACCEPTED, helper=self.student)
+        response = self.client.get(reverse("elderly_status"))
+        self.assertContains(response, "山田太郎 さん")
+        self.assertContains(response, "東洋大学")
+
+    def test_待っている依頼がなければ待機画面からホームへ(self, _):
+        self.client.force_login(self.senior)
+        self.assertRedirects(self.client.get(reverse("elderly_status")),
+                             reverse("elderly_home"))
+
+    def test_学生は依頼を作れない(self, _):
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("save_request"), self.save_data, follow=True)
+        self.assertRedirects(response, reverse("student_home"))
+        self.assertFalse(HelpRequest.objects.exists())
+
+    def test_ログインしていないと依頼作成は開けない(self, _):
+        url = reverse("create_request")
+        self.assertRedirects(self.client.get(url), f"{reverse('login')}?next={url}")
+
+
+class ScheduleFromTextTests(TestCase):
+    """AIがまとめた希望日時 → 確認画面の日にちと時間の初期値"""
+    today = date(2026, 10, 21)
+
+    def test_明日の午前中(self):
+        self.assertEqual(_schedule_from_text("明日 午前中", self.today),
+                         (date(2026, 10, 22), time(9), time(12)))
+
+    def test_月日と時刻(self):
+        self.assertEqual(_schedule_from_text("11/3（火）14時", self.today),
+                         (date(2026, 11, 3), time(14), time(16)))
+
+    def test_過ぎた日付は来年(self):
+        self.assertEqual(_schedule_from_text("1月5日 午後", self.today),
+                         (date(2027, 1, 5), time(13), time(17)))
+
+    def test_読み取れないときは明日の10時から12時(self):
+        self.assertEqual(_schedule_from_text("", self.today),
+                         (date(2026, 10, 22), time(10), time(12)))

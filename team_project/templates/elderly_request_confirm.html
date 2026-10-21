@@ -1,42 +1,70 @@
-{% extends 'base.html' %}
+{% load static %}
 
-{% block content %}
-<div style="text-align: center; margin-top: 50px; padding-bottom: 50px;">
-    <h2>お願いの内容の確認</h2>
-    <p style="font-size: 1.2em; margin-bottom: 30px;">以下の内容でお願いしてよろしいですか？</p>
-    
-    <!-- 確認内容の表示エリア -->
-    <div style="border: 2px solid #4caf50; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; margin: 0 auto; text-align: left; background-color: #f9fdf9; font-size: 1.3em; line-height: 1.6;">
-        <p style="margin-bottom: 15px;"><strong>📝 お願いすること：</strong><br>{{ title }}</p>
-        <p style="margin-bottom: 15px;"><strong>📅 希望する時間：</strong><br>{{ desired_time }}</p>
-        <p style="margin-bottom: 15px;"><strong>📍 場所：</strong><br>{{ location }}</p>
-        <p style="margin-bottom: 0;"><strong>💬 詳しい内容：</strong><br>{{ details }}</p>
-    </div>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お願いの確認 | ここにいるよ</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
 
-    <!-- ボタンエリア -->
-    <!-- actionの中身は、実際にデータを保存するurls.pyの設定名（例: save_request）に書き換えてください -->
-    <form method="POST" action="{% url 'save_request' %}" style="margin-top: 40px;">
-        {% csrf_token %}
-        
-        <!-- views.pyから受け取ったデータをそのまま次の処理へ送るための隠しフィールド -->
-        <input type="hidden" name="title" value="{{ title }}">
-        <input type="hidden" name="desired_time" value="{{ desired_time }}">
-        <input type="hidden" name="location" value="{{ location }}">
-        <input type="hidden" name="details" value="{{ details }}">
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
 
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
-            
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <h2 class="question-text">お願いの内容の確認</h2>
+        <p class="instruction-text">この内容でお願いしてよろしいですか？<br>ちがうところは直せます。</p>
+
+        <form method="post" action="{% url 'save_request' %}" class="confirm-card">
+            {% csrf_token %}
+            <!-- 話した内容とAIが聞き取った日時は、もう一度表示するときのために送り直す -->
+            <input type="hidden" name="text" value="{{ text }}">
+            <input type="hidden" name="desired_time" value="{{ desired_time }}">
+
+            <p class="confirm-heard">💬 話した内容：{{ text }}</p>
+
+            {{ form.non_field_errors }}
+            <div class="confirm-field">
+                <label for="{{ form.title.id_for_label }}">📝 {{ form.title.label }}</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+            <div class="confirm-field">
+                <label for="{{ form.date.id_for_label }}">📅 {{ form.date.label }}</label>
+                {% if desired_time %}<p class="confirm-hint">聞き取った日時：{{ desired_time }}</p>{% endif %}
+                {{ form.date }}
+                {{ form.date.errors }}
+            </div>
+            <div class="confirm-time">
+                <div class="confirm-field">
+                    <label for="{{ form.start_time.id_for_label }}">🕘 {{ form.start_time.label }}</label>
+                    {{ form.start_time }}
+                    {{ form.start_time.errors }}
+                </div>
+                <div class="confirm-field">
+                    <label for="{{ form.end_time.id_for_label }}">{{ form.end_time.label }}</label>
+                    {{ form.end_time }}
+                    {{ form.end_time.errors }}
+                </div>
+            </div>
+            <div class="confirm-field">
+                <label for="{{ form.area.id_for_label }}">📍 {{ form.area.label }}</label>
+                {{ form.area }}
+                {{ form.area.errors }}
+            </div>
+
             <!-- 決定ボタン（目立たせる） -->
-            <button type="submit" style="width: 80%; max-width: 400px; padding: 20px; background-color: #ff9800; color: white; border: none; border-radius: 12px; font-size: 1.5em; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                ✅ これでお願いする
-            </button>
+            <button type="submit" class="btn-submit btn-confirm">✅ これでお願いする</button>
+        </form>
 
-            <!-- 戻る・やり直すボタン（少し控えめな色にする） -->
-            <button type="button" onclick="history.back()" style="width: 80%; max-width: 400px; padding: 20px; background-color: #9e9e9e; color: white; border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                ↩️ 少し直す（戻る）
-            </button>
-            
-        </div>
-    </form>
-</div>
-{% endblock %}
+        <!-- 話しなおすときはマイクの画面へ -->
+        <a href="{% url 'create_request' %}" class="back-link">↩️ 話しなおす</a>
+    </main>
+
+</body>
+</html>

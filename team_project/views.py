@@ -1,13 +1,17 @@
+import re
+from datetime import date, time, timedelta
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import (SeniorProfileForm, SeniorSignupForm, StudentProfileForm,
-                    StudentSignupForm)
+from .forms import (HelpRequestForm, SeniorProfileForm, SeniorSignupForm,
+                    StudentProfileForm, StudentSignupForm)
 from . import ai
 from .models import HelpRequest, SeniorProfile, StudentProfile, TalkTheme
 
@@ -245,16 +249,132 @@ def elderly_home(request):
     return render(request, 'elderly_home.html')
 
 
-# 待機・マッチング完了画面を表示する関数
-def elderly_status(request):
-    return render(request, 'elderly_status.html')
-
-
 # ありがとう送信（レビュー）画面を表示する関数
 def elderly_review(request):
     return render(request, 'elderly_review.html')
 
 
-# 依頼作成（マイク）画面を表示する関数
+# 「明日」「6/1」などの言葉 → 何日後か・何月何日か
+_RELATIVE_DAYS = {"今日": 0, "明日": 1, "明後日": 2, "あさって": 2}
+# 「午前」などの言葉 → (何時から, 何時まで)
+_TIME_RANGES = [
+    ("午前", (9, 12)), ("午後", (13, 17)), ("朝", (9, 11)),
+    ("昼", (12, 14)), ("夕方", (16, 18)), ("夜", (18, 20)),
+]
+
+
+def _schedule_from_text(desired_time, today):
+    """AIがまとめた希望日時（例: 6/1（日）午前中）から、確認画面の日にちと時間の初期値を作る。
+
+    読み取れないところは「明日の10時〜12時」にする。高齢者が確認画面で直せる。
+    """
+    day = today + timedelta(days=1)
+    for word, days in _RELATIVE_DAYS.items():
+        if word in desired_time:
+            day = today + timedelta(days=days)
+            break
+    m = re.search(r"(\d{1,2})(?:/|月)(\d{1,2})", desired_time)
+    if m:
+        try:
+            day = date(today.year, int(m.group(1)), int(m.group(2)))
+            if day < today:
+                day = day.replace(year=today.year + 1)
+        except ValueError:
+            pass
+
+    start, end = 10, 12
+    for word, hours in _TIME_RANGES:
+        if word in desired_time:
+            start, end = hours
+            break
+    m = re.search(r"(\d{1,2})時", desired_time)
+    if m and int(m.group(1)) <= 21:
+        start = int(m.group(1))
+        end = start + 2
+    return day, time(start), time(end)
+
+
+def _senior_only(request):
+    """高齢者でなければ自分のホームへ戻すレスポンスを返す（高齢者なら None）"""
+    if _role(request.user) != "senior":
+        return redirect("home")
+    return None
+
+
+@login_required
 def create_request(request):
-    return render(request, 'create_request.html')
+    """依頼作成: マイクで困りごとを話す"""
+    return _senior_only(request) or render(request, "elderly_request_create.html")
+
+
+@require_POST
+@login_required
+def confirm_request(request):
+    """依頼の確認: 話した内容をAIでまとめて、高齢者に見てもらう"""
+    if response := _senior_only(request):
+        return response
+
+    text = request.POST.get("text", "").strip()
+    if not text:
+        return render(request, "elderly_request_create.html", {
+            "error": "お願いしたいことを話すか、書いてください。",
+        })
+
+    data = ai.structure_request(text)
+    day, start_time, end_time = _schedule_from_text(
+        data["desired_time"], timezone.localdate())
+    profile = SeniorProfile.objects.get(user=request.user)
+    form = HelpRequestForm(initial={
+        "title": data["title"],
+        "area": data["location"] or profile.area,
+        "date": day,
+        "start_time": start_time,
+        "end_time": end_time,
+    })
+    return render(request, "elderly_request_confirm.html", {
+        "form": form,
+        "text": text,
+        "desired_time": data["desired_time"],
+    })
+
+
+@require_POST
+@login_required
+def save_request(request):
+    """確認画面で「これでお願いする」を押したら依頼を保存して、待機画面へ"""
+    if response := _senior_only(request):
+        return response
+
+    form = HelpRequestForm(request.POST)
+    if not form.is_valid():
+        return render(request, "elderly_request_confirm.html", {
+            "form": form,
+            "text": request.POST.get("text", ""),
+            "desired_time": request.POST.get("desired_time", ""),
+        })
+
+    help_request = form.save(commit=False)
+    help_request.requester = request.user
+    help_request.save()
+    return redirect("elderly_status")
+
+
+@login_required
+def elderly_status(request):
+    """待機・マッチング: 自分が出した依頼（完了していないもの）の今の様子"""
+    if response := _senior_only(request):
+        return response
+
+    help_request = HelpRequest.objects.filter(requester=request.user).exclude(
+        status=HelpRequest.Status.DONE).order_by("-created_at").first()
+    if help_request is None:
+        # 待っている依頼がなければホームへ
+        return redirect("elderly_home")
+
+    helper_profile = None
+    if help_request.helper:
+        helper_profile = StudentProfile.objects.filter(user=help_request.helper).first()
+    return render(request, "elderly_status.html", {
+        "help_request": help_request,
+        "helper_profile": helper_profile,
+    })

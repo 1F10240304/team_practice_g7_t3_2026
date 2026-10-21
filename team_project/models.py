@@ -24,6 +24,15 @@ class HelpRequest(models.Model):
         blank=True,
         related_name="helped_requests",
     )
+    # 依頼を出した高齢者
+    requester = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="依頼した高齢者",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="help_requests",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
 

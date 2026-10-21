@@ -319,3 +319,150 @@ body {
 .page-link:hover {
     background-color: #ffedd5;
 }
+
+/* =========================================
+   依頼作成（マイク）ページ：話した内容の欄
+========================================= */
+.instruction-example {
+    font-size: 14px;
+    color: #9ca3af;
+}
+
+.request-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 30px;
+}
+
+.request-label {
+    align-self: flex-start;
+    font-size: 16px;
+    color: #4b5563;
+    margin-bottom: 8px;
+}
+
+.request-text {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 2px solid #fdba74;
+    border-radius: 12px;
+    font-size: 20px;
+    font-family: inherit;
+}
+
+/* button でも .btn-submit と同じ見た目にする */
+button.btn-submit {
+    border: none;
+    cursor: pointer;
+}
+
+.form-error,
+.errorlist {
+    color: #dc2626;
+    font-weight: bold;
+}
+.errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 6px 0 0;
+}
+
+/* =========================================
+   依頼の確認ページ
+========================================= */
+.confirm-card {
+    background-color: white;
+    border: 4px solid #fdba74;
+    border-radius: 25px;
+    padding: 30px 25px;
+    width: 100%;
+    max-width: 450px;
+    box-sizing: border-box;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.confirm-heard {
+    color: #6b7280;
+    font-size: 16px;
+    margin: 0;
+}
+
+.confirm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+.confirm-field label {
+    font-size: 20px;
+    font-weight: bold;
+}
+.confirm-field input {
+    padding: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 20px;
+    font-family: inherit;
+}
+
+.confirm-hint {
+    color: #9ca3af;
+    font-size: 15px;
+    margin: 0;
+}
+
+.confirm-time {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-confirm {
+    align-self: center;
+    background-color: #f97316;
+}
+
+/* =========================================
+   待機・マッチングページ：出した依頼と補助ボタン
+========================================= */
+.status-request {
+    background-color: white;
+    border-radius: 15px;
+    padding: 10px 20px;
+    margin-bottom: 30px;
+    color: #6b7280;
+}
+.status-request p {
+    margin: 4px 0;
+}
+.status-request-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #374151;
+}
+
+.matched-title {
+    color: #ea580c;
+    margin-bottom: 20px;
+}
+
+.demo-btn {
+    margin-top: 60px;
+    padding: 10px 20px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    color: #9ca3af;
+    border: none;
+    cursor: pointer;
+}
+
+/* a タグの .btn-submit も、余白が効くようにする */
+a.btn-submit {
+    display: inline-block;
+}
