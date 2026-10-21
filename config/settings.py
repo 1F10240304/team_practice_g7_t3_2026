@@ -132,5 +132,5 @@ MAILERS = {
 # Login
 # ログイン後は役割に応じたマイページ、ログアウト後はログイン画面へ
 
-LOGIN_REDIRECT_URL = 'mypage'
+LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
