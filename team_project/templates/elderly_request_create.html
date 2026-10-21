@@ -1,79 +1,32 @@
-{% load static %}
+{% extends 'base.html' %}
 
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>依頼する | ここにいるよ</title>
-    <!-- 共通のCSSを読み込む -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
-
-    <!-- ヘッダー -->
-    <header class="header">
-        <h1 class="header-title">ここにいるよ</h1>
-    </header>
-
-    <!-- メインコンテンツ -->
-    <main class="main-content">
-        <h2 class="question-text">声でたすけて</h2>
-        <p class="instruction-text">
-            マイクを押して、困りごとを話してください。<br>
-            <span style="font-size: 14px; color: #9ca3af;">（例：「電球を替えてほしい」「重い荷物を運んでほしい」）</span>
-        </p>
-
-        <!-- 巨大なマイクボタン -->
-        <!-- type="button" にすることで、勝手にページが切り替わるのを防ぎます -->
-        <button id="mic-btn" class="btn-mic" type="button">
-            <span class="mic-icon">🎙️</span>
-            <span id="mic-text">おして話す</span>
-        </button>
-
-        <!-- 録音中であることを知らせる文字（最初は非表示） -->
-        <div id="recording-status" class="recording-status hidden">
-            録音しています...
-        </div>
-
-        <!-- 次の画面へ進むボタン（最初は非表示） -->
-        <!-- ※あとでAI要約確認ページ（elderly_request_confirm）へ繋ぎます -->
-        <a href="#" id="submit-btn" class="btn-submit hidden">
-            話し終わった（次へ）
+{% block content %}
+<div style="text-align: center; margin-top: 50px;">
+    <h2>シニア向けホーム画面</h2>
+    <p style="font-size: 1.2em; margin-bottom: 40px;">こんにちは！今日はどのようなお手伝いが必要ですか？</p>
+    
+    <!-- ボタンを縦に並べて押しやすくする -->
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 30px;">
+        
+        <!-- お願いを作成するボタン -->
+        <!-- urls.py で設定している依頼作成ページのURL名（例: create_request）を指定 -->
+        <a href="{% url 'create_request' %}" style="display: block; width: 80%; max-width: 400px; padding: 25px; background-color: #ff9800; color: white; text-decoration: none; border-radius: 12px; font-size: 1.5em; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            📝 新しくお願いをする
         </a>
 
-        <!-- 戻るリンク -->
-        <a href="{% url 'elderly_home' %}" class="back-link">ホームに戻る</a>
-    </main>
-
-    <!-- 画面に動きをつけるJavaScript（デモ用） -->
-    <script>
-        // HTMLの中のボタンやテキストを見つけてくる
-        const micBtn = document.getElementById('mic-btn');
-        const micText = document.getElementById('mic-text');
-        const statusText = document.getElementById('recording-status');
-        const submitBtn = document.getElementById('submit-btn');
+        <!-- これまでのお願いを確認するボタン -->
+        <!-- urls.py で設定している依頼一覧ページのURL名（例: request_list）を指定 -->
+        <a href="{% url 'request_list' %}" style="display: block; width: 80%; max-width: 400px; padding: 25px; background-color: #4caf50; color: white; text-decoration: none; border-radius: 12px; font-size: 1.5em; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            📋 お願いしたことを見る
+        </a>
         
-        // 録音中かどうかの状態を保存する変数
-        let isRecording = false;
+    </div>
 
-        // マイクボタンがクリックされた時の処理
-        micBtn.addEventListener('click', () => {
-            if (!isRecording) {
-                // 【録音スタート】
-                isRecording = true;
-                micBtn.classList.add('recording'); // 赤くしてドクンドクンさせる
-                micText.innerText = "録音中...";
-                statusText.classList.remove('hidden'); // 「録音しています」の文字を出す
-                submitBtn.classList.remove('hidden');  // 「次へ」ボタンを出す
-            } else {
-                // 【録音ストップ】（もう一度押した場合）
-                isRecording = false;
-                micBtn.classList.remove('recording'); // 元のオレンジに戻す
-                micText.innerText = "もう一度やり直す";
-                statusText.classList.add('hidden'); // 文字を隠す
-            }
-        });
-    </script>
-</body>
-</html>
+    <!-- 役割選択に戻るリンク（テスト用・不要なら削除してください） -->
+    <div style="margin-top: 50px;">
+        <a href="{% url 'select_role' %}" style="color: #666; text-decoration: underline; font-size: 1.1em;">
+            役割選択画面に戻る
+        </a>
+    </div>
+</div>
+{% endblock %}
