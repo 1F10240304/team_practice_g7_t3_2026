@@ -266,6 +266,12 @@ class StudentHomeRequestTests(TestCase):
         self.assertContains(response, "電球の交換")
         self.assertNotContains(response, "買い物の付き添い")
 
+    def test_一覧から依頼の詳細へ行ける(self):
+        detail_url = reverse("student_request_detail", args=[self.setagaya.pk])
+        self.assertContains(self.client.get(reverse("student_home")), f'href="{detail_url}"')
+        self.assertContains(self.client.get(reverse("request_list")), f'href="{detail_url}"')
+        self.assertContains(self.client.get(detail_url), "電球の交換")
+
     def test_引き受けると学生ホームに戻る(self):
         response = self.client.post(reverse("accept_request", args=[self.setagaya.pk]))
         self.assertRedirects(response, reverse("student_home"))
@@ -573,6 +579,49 @@ class CompleteRequestTests(TestCase):
     def test_GETでは完了にできない(self):
         self.client.force_login(self.student)
         self.assertEqual(self.client.get(self.url).status_code, 405)
+
+
+class StudentRequestDetailTests(TestCase):
+    """学生の依頼詳細: 開いた依頼の内容が出て、その依頼を引き受ける"""
+
+    def setUp(self):
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=senior, name="佐藤花子", area="東京都北区")
+        start = timezone.now() + timedelta(days=1)
+        self.first = HelpRequest.objects.create(
+            title="電球の交換をお願いしたいです", area="東京都北区", requester=senior,
+            start_at=start, end_at=start + timedelta(hours=2))
+        self.second = HelpRequest.objects.create(
+            title="買い物をお願いしたいです", area="東京都板橋区", requester=senior,
+            start_at=start, end_at=start + timedelta(hours=2))
+        self.client.force_login(self.student)
+
+    def test_開いた依頼の内容が表示される(self):
+        response = self.client.get(reverse("student_request_detail", args=[self.second.pk]))
+        self.assertContains(response, "買い物をお願いしたいです")
+        self.assertContains(response, "東京都板橋区")
+        self.assertContains(response, "佐藤花子")
+        self.assertNotContains(response, "電球の交換")
+
+    def test_引き受けボタンは開いた依頼のIDに送られる(self):
+        response = self.client.get(reverse("student_request_detail", args=[self.second.pk]))
+        self.assertContains(response, f'action="{reverse("accept_request", args=[self.second.pk])}"')
+
+    def test_引き受け済みの依頼には引き受けボタンが出ない(self):
+        HelpRequest.objects.filter(pk=self.second.pk).update(status=HelpRequest.Status.ACCEPTED)
+        response = self.client.get(reverse("student_request_detail", args=[self.second.pk]))
+        self.assertContains(response, "すでに引き受けられています")
+        self.assertNotContains(response, "この依頼を引き受ける")
+
+    def test_ない依頼は404(self):
+        self.assertEqual(self.client.get(reverse("student_request_detail", args=[9999])).status_code, 404)
+
+    def test_ログインしていないとログイン画面へ(self):
+        self.client.logout()
+        response = self.client.get(reverse("student_request_detail", args=[self.first.pk]))
+        self.assertEqual(response.status_code, 302)
 
 
 @mock.patch("team_project.ai._call_ai_mop", return_value=None)  # テストではAIに通信しない
