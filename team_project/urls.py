@@ -34,7 +34,5 @@ urlpatterns = [
     path("student-review/", views.student_review, name="student_review"),
     # 学生マイページの下あたりに追加
     path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
-    # 学生マイページの下あたりに追加
-    path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
 ]
 
