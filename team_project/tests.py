@@ -237,6 +237,11 @@ class HomeTests(TestCase):
         self.assertContains(self.client.get(reverse("senior_mypage")),
                             f'href="{reverse("elderly_home")}"')
 
+    def test_高齢者のマイページから一覧へ行ける(self):
+        self.client.force_login(self.senior)
+        self.assertContains(self.client.get(reverse("senior_mypage")),
+                            f'href="{reverse("my_requests")}"')
+
 
 class StudentHomeRequestTests(TestCase):
     """学生ホームの依頼一覧"""
@@ -681,3 +686,5 @@ class ScheduleFromTextTests(TestCase):
     def test_読み取れないときは明日の10時から12時(self):
         self.assertEqual(_schedule_from_text("", self.today),
                          (date(2026, 10, 22), time(10), time(12)))
+
+

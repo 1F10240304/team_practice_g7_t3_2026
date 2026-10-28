@@ -26,5 +26,6 @@ urlpatterns = [
     path('create-request/confirm/', views.confirm_request, name='confirm_request'),
     path('create-request/save/', views.save_request, name='save_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
+    path('elderly-requests/', views.my_requests, name='my_requests'), 
     path('elderly-review/', views.elderly_review, name='elderly_review'),
 ]
