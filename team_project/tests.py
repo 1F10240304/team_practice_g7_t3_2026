@@ -608,6 +608,17 @@ class ElderlyRequestFlowTests(TestCase):
         self.assertContains(response, 'value="09:00"')
         self.assertContains(response, f'action="{reverse("save_request")}"')
 
+    def test_聞き取れなかった項目が確認画面に出る(self, _):
+        self.client.force_login(self.senior)
+        response = self.client.post(reverse("confirm_request"), {"text": "買い物に行ってほしい"})
+        self.assertContains(response, "場所、日時が分かりませんでした")
+
+    def test_全部聞き取れたときは注意を出さない(self, _):
+        self.client.force_login(self.senior)
+        response = self.client.post(reverse("confirm_request"),
+                                    {"text": "明日の午前中に世田谷区で電球を替えてほしい"})
+        self.assertNotContains(response, "分かりませんでした")
+
     def test_何も話していないと依頼作成に戻る(self, _):
         self.client.force_login(self.senior)
         response = self.client.post(reverse("confirm_request"), {"text": "  "})

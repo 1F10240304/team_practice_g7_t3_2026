@@ -26,6 +26,13 @@
             <input type="hidden" name="text" value="{{ text }}">
             <input type="hidden" name="desired_time" value="{{ desired_time }}">
 
+            {% if missing_labels %}
+                <p class="confirm-missing">
+                    ⚠️ {% for label in missing_labels %}{{ label }}{% if not forloop.last %}、{% endif %}{% endfor %}が分かりませんでした。<br>
+                    下の欄を見て、ちがうところは直してください。
+                </p>
+            {% endif %}
+
             <p class="confirm-heard">💬 話した内容：{{ text }}</p>
 
             {{ form.non_field_errors }}

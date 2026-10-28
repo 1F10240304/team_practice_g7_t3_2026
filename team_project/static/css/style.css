@@ -418,6 +418,15 @@ button.btn-submit {
     margin: 0;
 }
 
+.confirm-missing {
+    background: #fef3c7;
+    border-radius: 8px;
+    color: #92400e;
+    font-weight: bold;
+    margin: 0;
+    padding: 12px;
+}
+
 .confirm-time {
     display: flex;
     gap: 12px;

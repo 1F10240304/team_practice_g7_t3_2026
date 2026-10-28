@@ -294,6 +294,10 @@ def _schedule_from_text(desired_time, today):
     return day, time(start), time(end)
 
 
+# AIが聞き取れなかった項目 → 確認画面に出す名前
+_MISSING_LABELS = {"title": "お願いの内容", "location": "場所", "desired_time": "日時"}
+
+
 def _senior_only(request):
     """高齢者でなければ自分のホームへ戻すレスポンスを返す（高齢者なら None）"""
     if _role(request.user) != "senior":
@@ -321,6 +325,7 @@ def confirm_request(request):
         })
 
     data = ai.structure_request(text)
+    missing_labels = [_MISSING_LABELS[key] for key in data["missing"]]
     day, start_time, end_time = _schedule_from_text(
         data["desired_time"], timezone.localdate())
     profile = SeniorProfile.objects.get(user=request.user)
@@ -335,6 +340,7 @@ def confirm_request(request):
         "form": form,
         "text": text,
         "desired_time": data["desired_time"],
+        "missing_labels": missing_labels,
     })
 
 
