@@ -6,71 +6,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>お願いの確認 | ここにいるよ</title>
+    <!-- Tailwind CSS を読み込む -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body>
+<body class="bg-orange-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
 
     <!-- ヘッダー -->
-    <header class="header">
+    <header class="header relative">
+        <a href="{% url 'create_request' %}" class="absolute left-6 top-5 text-gray-400 hover:text-orange-500 text-2xl font-bold transition">
+            ←
+        </a>
         <h1 class="header-title">ここにいるよ</h1>
     </header>
 
     <!-- メインコンテンツ -->
-    <main class="main-content">
-        <h2 class="question-text">お願いの内容の確認</h2>
-        <p class="instruction-text">この内容でお願いしてよろしいですか？<br>ちがうところは直せます。</p>
+    <main class="flex-grow flex flex-col items-center p-6 w-full max-w-md mx-auto">
+        <h2 class="text-2xl font-bold mb-2 text-gray-700 w-full text-center">お願いの内容の確認</h2>
+        <p class="text-gray-500 text-sm mb-6 text-center">
+            この内容でお願いしてよろしいですか？<br>
+            ちがうところは直せます。
+        </p>
 
-        <form method="post" action="{% url 'save_request' %}" class="confirm-card">
+        <!-- バックエンドの機能（action="{% url 'save_request' %}"）はそのまま！ -->
+        <form method="post" action="{% url 'save_request' %}" class="w-full">
             {% csrf_token %}
-            <!-- 話した内容とAIが聞き取った日時は、もう一度表示するときのために送り直す -->
+            
+            <!-- AIが聞き取ったデータを隠し持っておく（バックエンドの指示通り） -->
             <input type="hidden" name="text" value="{{ text }}">
             <input type="hidden" name="desired_time" value="{{ desired_time }}">
 
+            <!-- ⚠️ 聞き取れなかった項目がある場合の警告メッセージ -->
             {% if missing_labels %}
-                <p class="confirm-missing">
-                    ⚠️ {% for label in missing_labels %}{{ label }}{% if not forloop.last %}、{% endif %}{% endfor %}が分かりませんでした。<br>
-                    下の欄を見て、ちがうところは直してください。
-                </p>
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+                    <p class="text-red-700 font-bold text-sm">
+                        ⚠️ {% for label in missing_labels %}{{ label }}{% if not forloop.last %}、{% endif %}{% endfor %}が分かりませんでした。
+                    </p>
+                    <p class="text-red-600 text-xs mt-1">下の欄を見て、ちがうところは直してください。</p>
+                </div>
             {% endif %}
 
-            <p class="confirm-heard">💬 話した内容：{{ text }}</p>
+            <!-- 💬 話した内容（AIの文字起こし結果） -->
+            <div class="bg-white rounded-3xl p-6 shadow-md border-4 border-orange-200 w-full mb-8">
+                <p class="text-sm font-bold text-gray-400 mb-2">💬 話した内容</p>
+                <p class="text-xl font-bold text-gray-800 mb-4 bg-orange-50 p-4 rounded-xl border border-orange-100">
+                    {{ text }}
+                </p>
 
-            {{ form.non_field_errors }}
-            <div class="confirm-field">
-                <label for="{{ form.title.id_for_label }}">📝 {{ form.title.label }}</label>
-                {{ form.title }}
-                {{ form.title.errors }}
-            </div>
-            <div class="confirm-field">
-                <label for="{{ form.date.id_for_label }}">📅 {{ form.date.label }}</label>
-                {% if desired_time %}<p class="confirm-hint">聞き取った日時：{{ desired_time }}</p>{% endif %}
-                {{ form.date }}
-                {{ form.date.errors }}
-            </div>
-            <div class="confirm-time">
-                <div class="confirm-field">
-                    <label for="{{ form.start_time.id_for_label }}">🕘 {{ form.start_time.label }}</label>
-                    {{ form.start_time }}
-                    {{ form.start_time.errors }}
+                <hr class="border-orange-100 mb-6">
+
+                <!-- 全体のエラー表示用 -->
+                {% if form.non_field_errors %}
+                    <div class="text-red-500 text-sm font-bold mb-4">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <!-- ==========================================
+                     ここから下が、Djangoのフォームを
+                     Tailwindでおしゃれにした入力欄です
+                ========================================== -->
+                <div class="space-y-5">
+                    
+                    <!-- 📝 タイトル -->
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-bold text-orange-500 mb-1">
+                            📝 {{ form.title.label }}
+                        </label>
+                        <!-- form.title をそのまま出しつつ、Tailwindで装飾 -->
+                        <div class="text-lg text-gray-700 bg-gray-50 border-2 border-gray-200 rounded-xl p-3 w-full focus-within:border-orange-400 focus-within:bg-white transition">
+                            {{ form.title }}
+                        </div>
+                        <div class="text-red-500 text-xs mt-1">{{ form.title.errors }}</div>
+                    </div>
+
+                    <!-- 📅 日付 -->
+                    <div>
+                        <label for="{{ form.date.id_for_label }}" class="block text-sm font-bold text-orange-500 mb-1">
+                            📅 {{ form.date.label }}
+                        </label>
+                        {% if desired_time %}
+                            <p class="text-xs text-gray-400 mb-2">聞き取った日時：{{ desired_time }}</p>
+                        {% endif %}
+                        <div class="text-lg text-gray-700 bg-gray-50 border-2 border-gray-200 rounded-xl p-3 w-full focus-within:border-orange-400 focus-within:bg-white transition">
+                            {{ form.date }}
+                        </div>
+                        <div class="text-red-500 text-xs mt-1">{{ form.date.errors }}</div>
+                    </div>
+
+                    <!-- 🕘 時間（開始〜終了を横並びに） -->
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label for="{{ form.start_time.id_for_label }}" class="block text-sm font-bold text-orange-500 mb-1">
+                                🕘 {{ form.start_time.label }}
+                            </label>
+                            <div class="text-lg text-gray-700 bg-gray-50 border-2 border-gray-200 rounded-xl p-3 w-full focus-within:border-orange-400 focus-within:bg-white transition">
+                                {{ form.start_time }}
+                            </div>
+                            <div class="text-red-500 text-xs mt-1">{{ form.start_time.errors }}</div>
+                        </div>
+                        
+                        <div class="flex items-end pb-3 text-gray-400 font-bold">〜</div>
+                        
+                        <div class="flex-1">
+                            <label for="{{ form.end_time.id_for_label }}" class="block text-sm font-bold text-orange-500 mb-1">
+                                {{ form.end_time.label }}
+                            </label>
+                            <div class="text-lg text-gray-700 bg-gray-50 border-2 border-gray-200 rounded-xl p-3 w-full focus-within:border-orange-400 focus-within:bg-white transition">
+                                {{ form.end_time }}
+                            </div>
+                            <div class="text-red-500 text-xs mt-1">{{ form.end_time.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- 📍 場所 -->
+                    <div>
+                        <label for="{{ form.area.id_for_label }}" class="block text-sm font-bold text-orange-500 mb-1">
+                            📍 {{ form.area.label }}
+                        </label>
+                        <div class="text-lg text-gray-700 bg-gray-50 border-2 border-gray-200 rounded-xl p-3 w-full focus-within:border-orange-400 focus-within:bg-white transition">
+                            {{ form.area }}
+                        </div>
+                        <div class="text-red-500 text-xs mt-1">{{ form.area.errors }}</div>
+                    </div>
+
                 </div>
-                <div class="confirm-field">
-                    <label for="{{ form.end_time.id_for_label }}">{{ form.end_time.label }}</label>
-                    {{ form.end_time }}
-                    {{ form.end_time.errors }}
-                </div>
-            </div>
-            <div class="confirm-field">
-                <label for="{{ form.area.id_for_label }}">📍 {{ form.area.label }}</label>
-                {{ form.area }}
-                {{ form.area.errors }}
             </div>
 
-            <!-- 決定ボタン（目立たせる） -->
-            <button type="submit" class="btn-submit btn-confirm">✅ これでお願いする</button>
+            <!-- 決定ボタン（巨大オレンジボタン） -->
+            <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-full text-xl shadow-lg transition-transform transform hover:scale-105 flex justify-center items-center gap-2 mb-6">
+                <span>✅</span> これでお願いする
+            </button>
         </form>
 
-        <!-- 話しなおすときはマイクの画面へ -->
-        <a href="{% url 'create_request' %}" class="back-link">↩️ 話しなおす</a>
+        <!-- 戻るリンク -->
+        <a href="{% url 'create_request' %}" class="text-gray-400 hover:text-orange-500 underline font-medium transition text-lg mb-8">
+            ↩️ もう一度話しなおす
+        </a>
     </main>
 
 </body>

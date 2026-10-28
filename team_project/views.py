@@ -403,3 +403,7 @@ def student_review(request):
 # ガクチカ活動証明書ページ
 def student_gakuchika(request):
     return render(request, 'student_gakuchika.html')
+
+# 高齢者の履歴ページを表示する関数
+def elderly_history(request):
+    return render(request, 'elderly_history.html')
