@@ -386,10 +386,16 @@ def elderly_status(request):
     })
 
 # 学生側の依頼詳細ページを表示する関数
+@login_required
 def student_request_detail(request, pk):
-    # 本当はここでデータベースから pk（ID）に一致する依頼を探してきますが、
-    # まずは画面を表示するだけの処理を書きます
-    return render(request, 'student_request_detail.html')
+    help_request = get_object_or_404(HelpRequest, pk=pk)
+    requester_profile = SeniorProfile.objects.filter(user=help_request.requester).first()
+    return render(request, 'student_request_detail.html', {
+        "help_request": help_request,
+        "requester_profile": requester_profile,
+        "talk_theme": _talk_theme_text(help_request),
+        "can_accept": help_request.status == HelpRequest.Status.OPEN,
+    })
 
 
 # 学生側の活動中（トークテーマ表示）ページ

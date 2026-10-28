@@ -31,6 +31,7 @@
         <h3>{{ r.title }}</h3>
         <p class="request-meta">{{ r.area }}</p>
         <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+        <a href="{% url 'student_request_detail' r.pk %}">詳しく見る</a>
         <form method="post" action="{% url 'accept_request' r.pk %}">
           {% csrf_token %}
           <button type="submit">引き受ける</button>
