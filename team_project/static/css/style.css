@@ -1,3 +1,4 @@
+
 /* アプリ全体の基本設定 */
 body {
     background-color: #fff7ed; /* 薄いオレンジの背景 */
@@ -479,3 +480,482 @@ button.btn-submit {
 a.btn-submit {
     display: inline-block;
 }
+=======
+/* アプリ全体の基本設定 */
+body {
+    background-color: #fff7ed; /* 薄いオレンジの背景 */
+    color: #374151; /* 基本の文字色 */
+    font-family: sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ヘッダーのデザイン */
+.header {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 15px;
+    text-align: center;
+}
+.header-title {
+    color: #f97316;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* メイン部分の配置 */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+}
+
+/* 挨拶の文字 */
+.greeting-text {
+    color: #6b7280;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+.question-text {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 40px;
+}
+
+/* 巨大ボタンの共通デザイン */
+.btn-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 25px;
+    padding: 30px;
+    text-decoration: none;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    transition: transform 0.2s; /* マウスを乗せた時のアニメーション */
+}
+.btn-menu:hover {
+    transform: scale(1.05); /* 少し大きくする */
+}
+.btn-icon {
+    font-size: 60px;
+    margin-bottom: 10px;
+}
+
+/* ①「手伝ってほしい」ボタンの専用色 */
+.btn-help {
+    background-color: #f97316;
+    color: white;
+}
+.btn-help h3 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+}
+.btn-help p {
+    color: #ffedd5;
+    margin: 0;
+}
+
+/* ②「お話したい」ボタンの専用色 */
+.btn-talk {
+    background-color: white;
+    border: 4px solid #fb923c;
+    color: #ea580c;
+}
+.btn-talk h3 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+}
+.btn-talk p {
+    color: #f97316;
+    margin: 0;
+}
+
+/* 戻るリンク */
+.back-link {
+    margin-top: 30px;
+    color: #9ca3af;
+    text-decoration: underline;
+    font-size: 18px;
+}
+
+/* =========================================
+   依頼作成（マイク）ページ専用のデザイン
+========================================= */
+.instruction-text {
+    font-size: 18px;
+    color: #4b5563;
+    margin-bottom: 40px;
+}
+
+/* 巨大なマイクボタン */
+.btn-mic {
+    background-color: #f97316;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* マウスを乗せた時 */
+.btn-mic:hover {
+    transform: scale(1.05);
+}
+
+/* 録音中（クリックされた後）のスタイル */
+.btn-mic.recording {
+    background-color: #ef4444; /* 録音中は赤色に変化 */
+    animation: pulse 1.5s infinite; /* ドクンドクンと動かすアニメーション */
+}
+
+.mic-icon {
+    font-size: 70px;
+    margin-bottom: 10px;
+}
+
+#mic-text {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* 録音中のテキスト */
+.recording-status {
+    margin-top: 30px;
+    color: #ef4444;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+/* 話し終わった（次へ）ボタン */
+.btn-submit {
+    margin-top: 30px;
+    background-color: #10b981; /* 安心感のある優しい緑色 */
+    color: white;
+    text-decoration: none;
+    font-size: 22px;
+    font-weight: bold;
+    padding: 15px 40px;
+    border-radius: 35px;
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+    transition: transform 0.2s;
+}
+.btn-submit:hover {
+    transform: scale(1.05);
+}
+
+/* 要素を隠すための便利なクラス */
+.hidden {
+    display: none !important;
+}
+
+/* 録音中の波打つアニメーションの設定 */
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+
+/* =========================================
+   マッチング待機・確定ページ専用のデザイン
+========================================= */
+.status-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+/* くるくる回るローディングアニメーション */
+.loader {
+    border: 12px solid #ffedd5; /* 薄いオレンジ */
+    border-top: 12px solid #f97316; /* 濃いオレンジ */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 1.5s linear infinite;
+    margin-bottom: 30px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* マッチング成功時の学生カード */
+.student-card {
+    background-color: white;
+    border: 4px solid #fdba74;
+    border-radius: 25px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.2);
+    text-align: center;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.student-avatar {
+    font-size: 90px;
+    margin-bottom: 20px;
+}
+
+.student-name {
+    font-size: 32px;
+    font-weight: bold;
+    color: #374151;
+    margin-bottom: 10px;
+}
+
+.student-info {
+    font-size: 20px;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+/* =========================================
+   ありがとう送信（レビュー）ページ専用のデザイン
+========================================= */
+.review-card {
+    background-color: white;
+    border: 4px solid #fdba74;
+    border-radius: 25px;
+    padding: 40px 20px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.1);
+    margin-bottom: 20px;
+}
+
+/* 星を横に並べる枠 */
+.star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 30px 0;
+}
+
+/* ひとつの星のデザイン */
+.star {
+    font-size: 55px;
+    color: #e5e7eb; /* 最初はグレー */
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    user-select: none; /* スマホで長押し選択されるのを防ぐ */
+}
+
+/* 選択された星（黄色） */
+.star.selected {
+    color: #fbbf24; /* 明るい黄色 */
+    transform: scale(1.15); /* 少し大きくする */
+}
+
+/* 押した瞬間のへこむアニメーション */
+.star:active {
+    transform: scale(0.9);
+}
+
+/* ありがとうメッセージ（完了時） */
+.thank-you-msg {
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* =========================================
+   ホーム⇔マイページの移動リンク
+========================================= */
+.page-link {
+    display: inline-block;
+    padding: 8px 20px;
+    color: #ea580c;
+    background-color: white;
+    border: 2px solid #fb923c;
+    border-radius: 999px;
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.page-link:hover {
+    background-color: #ffedd5;
+}
+
+/* =========================================
+   依頼作成（マイク）ページ：話した内容の欄
+========================================= */
+.instruction-example {
+    font-size: 14px;
+    color: #9ca3af;
+}
+
+.request-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 30px;
+}
+
+.request-label {
+    align-self: flex-start;
+    font-size: 16px;
+    color: #4b5563;
+    margin-bottom: 8px;
+}
+
+.request-text {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 2px solid #fdba74;
+    border-radius: 12px;
+    font-size: 20px;
+    font-family: inherit;
+}
+
+/* button でも .btn-submit と同じ見た目にする */
+button.btn-submit {
+    border: none;
+    cursor: pointer;
+}
+
+.form-error,
+.errorlist {
+    color: #dc2626;
+    font-weight: bold;
+}
+.errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 6px 0 0;
+}
+
+/* =========================================
+   依頼の確認ページ
+========================================= */
+.confirm-card {
+    background-color: white;
+    border: 4px solid #fdba74;
+    border-radius: 25px;
+    padding: 30px 25px;
+    width: 100%;
+    max-width: 450px;
+    box-sizing: border-box;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.confirm-heard {
+    color: #6b7280;
+    font-size: 16px;
+    margin: 0;
+}
+
+.confirm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+.confirm-field label {
+    font-size: 20px;
+    font-weight: bold;
+}
+.confirm-field input {
+    padding: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 20px;
+    font-family: inherit;
+}
+
+.confirm-hint {
+    color: #9ca3af;
+    font-size: 15px;
+    margin: 0;
+}
+
+.confirm-missing {
+    background: #fef3c7;
+    border-radius: 8px;
+    color: #92400e;
+    font-weight: bold;
+    margin: 0;
+    padding: 12px;
+}
+
+.confirm-time {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-confirm {
+    align-self: center;
+    background-color: #f97316;
+}
+
+/* =========================================
+   待機・マッチングページ：出した依頼と補助ボタン
+========================================= */
+.status-request {
+    background-color: white;
+    border-radius: 15px;
+    padding: 10px 20px;
+    margin-bottom: 30px;
+    color: #6b7280;
+}
+.status-request p {
+    margin: 4px 0;
+}
+.status-request-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #374151;
+}
+
+.matched-title {
+    color: #ea580c;
+    margin-bottom: 20px;
+}
+
+.demo-btn {
+    margin-top: 60px;
+    padding: 10px 20px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    color: #9ca3af;
+    border: none;
+    cursor: pointer;
+}
+
+/* a タグの .btn-submit も、余白が効くようにする */
+a.btn-submit {
+    display: inline-block;
+}
+

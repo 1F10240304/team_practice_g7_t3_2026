@@ -49,10 +49,11 @@
                 このブラウザでは声で入力できません。上の欄に書いてください。
             </p>
 
-            <!-- 次の画面（確認）へ進むボタン（内容が入るまで非表示） -->
-            <button type="submit" id="submit-btn" class="btn-submit hidden">
+            <!-- 修正前： <a href="#" id="submit-btn" ...> -->
+            <!-- 修正後： マイクで喋り終わったら確認画面へ飛ぶ -->
+            <a href="{% url 'elderly_request_confirm' %}" id="submit-btn" class="btn-submit hidden">
                 話し終わった（次へ）
-            </button>
+            </a>
         </form>
 
         <!-- 戻るリンク -->

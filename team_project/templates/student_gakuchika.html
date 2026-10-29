@@ -1,0 +1,123 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活動証明・ガクチカ記録 | ここにいるよ</title>
+    <!-- Tailwind CSSの読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="bg-blue-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm py-4 px-6 text-center border-b border-blue-100 flex justify-between items-center relative">
+        <!-- 戻るボタン（左上） -->
+        <a href="{% url 'student_mypage' %}" class="absolute left-6 text-gray-400 hover:text-blue-500 text-2xl font-bold transition">
+            ←
+        </a>
+        <h1 class="text-xl font-bold text-blue-500 tracking-wider mx-auto">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow flex flex-col items-center p-6 w-full max-w-2xl mx-auto">
+        
+        <div class="mb-8 w-full text-center">
+            <h2 class="text-2xl font-bold text-gray-700 mb-2">多世代交流・活動証明書</h2>
+            <p class="text-gray-500 text-sm">
+                あなたのこれまでの地域貢献と、世代間交流の記録です。<br>
+                就職活動などの自己PR（ガクチカ）に活用できます。
+            </p>
+        </div>
+
+        <!-- ==============================================
+             ① 総合実績（サマリー）の公式証明書風カード
+        ============================================== -->
+        <div class="bg-white rounded-xl p-8 shadow-md border border-gray-200 w-full mb-8 relative">
+            <!-- ちょっと公式っぽいリボン装飾 -->
+            <div class="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl">
+                公式記録
+            </div>
+
+            <h3 class="text-xl font-bold text-gray-800 mb-6 border-b-2 border-blue-500 pb-2 inline-block">
+                活動実績サマリー
+            </h3>
+
+            <div class="grid grid-cols-2 gap-6 mb-6">
+                <!-- 累計サポート回数 -->
+                <div class="bg-blue-50 rounded-lg p-4 text-center">
+                    <p class="text-sm text-gray-500 font-bold mb-1">地域サポート回数</p>
+                    <p class="text-3xl font-black text-blue-600">
+                        12<span class="text-lg font-bold text-gray-500 ml-1">回</span>
+                    </p>
+                </div>
+                <!-- 獲得した星（評価） -->
+                <div class="bg-orange-50 rounded-lg p-4 text-center">
+                    <p class="text-sm text-gray-500 font-bold mb-1">獲得した「ありがとう」</p>
+                    <p class="text-3xl font-black text-orange-500">
+                        58<span class="text-lg font-bold text-gray-500 ml-1">★</span>
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">（平均評価：4.8）</p>
+                </div>
+            </div>
+
+            <!-- 自己PRに使いやすい強みグラフ（デモ表示） -->
+            <div class="mb-4">
+                <p class="text-sm text-gray-500 font-bold mb-2">得られたスキル・気づき傾向</p>
+                <div class="flex gap-2">
+                    <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">傾聴力・対話力</span>
+                    <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">課題解決力</span>
+                    <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">多様性への理解</span>
+                </div>
+            </div>
+            
+            <!-- PDF出力（書き出し）ボタン -->
+            <button class="w-full mt-4 border-2 border-blue-500 text-blue-500 hover:bg-blue-50 font-bold py-3 rounded-lg transition flex justify-center items-center gap-2">
+                <span>📄</span> 証明書をPDFでダウンロード
+            </button>
+        </div>
+
+        <!-- ==============================================
+             ② これまでの学びと交流の記録（タイムライン）
+        ============================================== -->
+        <div class="w-full">
+            <h3 class="text-lg font-bold text-gray-700 mb-4 ml-2">交流の記録（学びメモ）</h3>
+
+            <div class="space-y-4">
+                <!-- 記録1 -->
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="text-xs text-blue-500 font-bold mb-1">2026年6月1日</p>
+                            <p class="text-sm font-bold text-gray-800">電球交換 ＋ 昔の商店街のお話</p>
+                        </div>
+                        <div class="text-orange-400 text-sm">★★★★★</div>
+                    </div>
+                    <!-- あなたが student_review で入力した「学びメモ」がここに出ます！ -->
+                    <div class="bg-gray-50 p-3 rounded text-sm text-gray-600 leading-relaxed border-l-4 border-orange-400">
+                        昔の商店街は夕方になると、お豆腐屋さんのラッパの音が聞こえてきたそうです。現代のデジタルコミュニケーションにはない、直接的な声かけや地域のつながりの強さを学びました。
+                    </div>
+                </div>
+
+                <!-- 記録2 -->
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="text-xs text-blue-500 font-bold mb-1">2026年5月28日</p>
+                            <p class="text-sm font-bold text-gray-800">買い物代行 ＋ お料理のコツ</p>
+                        </div>
+                        <div class="text-orange-400 text-sm">★★★★☆</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded text-sm text-gray-600 leading-relaxed border-l-4 border-orange-400">
+                        「お出汁は前の晩から昆布をつけておくと全然違う」という知恵を教わりました。世代の違う方と話す時は、自分から質問を投げかけることで相手も話しやすくなるという対話のコツを掴めました。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>

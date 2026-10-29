@@ -1,0 +1,82 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活動中 | ここにいるよ</title>
+    <!-- Tailwind CSSの読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="bg-blue-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm py-4 px-6 text-center border-b border-blue-100">
+        <h1 class="text-xl font-bold text-blue-500 tracking-wider">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow flex flex-col items-center p-6 w-full max-w-md mx-auto">
+        
+        <!-- 🔴 進行中であることを示すパルスバッジ -->
+        <div class="bg-blue-100 text-blue-700 font-bold px-5 py-2 rounded-full mb-6 flex items-center gap-3 shadow-sm">
+            <span class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></span>
+            現在、活動中（マッチング完了）
+        </div>
+
+        <!-- 誰の、何の依頼か（コンパクトに表示） -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-blue-100 w-full mb-6 flex items-center gap-4">
+            <div class="text-4xl">👵</div>
+            <div>
+                <p class="text-sm text-gray-500 font-bold">世田谷区のおばあちゃん</p>
+                <p class="text-lg font-bold text-gray-800">電球の交換</p>
+            </div>
+        </div>
+
+        <!-- 💡 アプリの目玉：AIが生成した「今日のトークテーマ」 -->
+        <div class="bg-white rounded-3xl p-6 shadow-md border-4 border-orange-200 w-full mb-8 relative overflow-hidden">
+            <!-- ちょっとした背景の装飾 -->
+            <div class="absolute -top-4 -right-4 text-6xl opacity-10">💬</div>
+            
+            <h3 class="text-orange-600 font-bold text-xl mb-2 text-center flex justify-center items-center gap-2">
+                <span>💡</span> 今日のトークテーマ
+            </h3>
+            <p class="text-gray-500 text-xs mb-5 text-center">
+                作業が終わったら、お茶を飲みながら<br>こんなお話を聞いてみませんか？
+            </p>
+
+            <!-- トークテーマのリスト（AIが生成する想定） -->
+            <ul class="space-y-3">
+                <li class="bg-orange-50 hover:bg-orange-100 transition p-4 rounded-xl border border-orange-100 text-orange-800 font-medium flex items-start gap-3">
+                    <span class="text-xl">📻</span>
+                    <span>昔の商店街の思い出について</span>
+                </li>
+                <li class="bg-orange-50 hover:bg-orange-100 transition p-4 rounded-xl border border-orange-100 text-orange-800 font-medium flex items-start gap-3">
+                    <span class="text-xl">🍳</span>
+                    <span>暮らしの知恵や、料理の工夫について</span>
+                </li>
+                <li class="bg-orange-50 hover:bg-orange-100 transition p-4 rounded-xl border border-orange-100 text-orange-800 font-medium flex items-start gap-3">
+                    <span class="text-xl">🏫</span>
+                    <span>学生時代の思い出を聞いてみよう</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 完了報告ボタン（次の画面へ） -->
+        <!-- ※一旦、まだ作っていない student_review.html 用のリンクを仮置きしておきます -->
+        <a href="{% url 'student_review' %}" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-full text-lg shadow-lg transition-transform transform hover:scale-105 flex justify-center items-center gap-2">
+            ✅ 作業完了・学びを記録する
+        </a>
+
+        <!-- キャンセルやトラブル時のリンク -->
+        <div class="mt-6">
+            <a href="#" class="text-gray-400 hover:text-red-500 text-sm underline font-medium transition">
+                トラブルが発生した場合
+            </a>
+        </div>
+    </main>
+
+</body>
+</html>

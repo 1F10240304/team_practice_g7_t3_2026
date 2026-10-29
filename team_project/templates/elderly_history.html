@@ -1,0 +1,90 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>これまでの記録 | ここにいるよ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="bg-orange-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="header relative">
+        <a href="{% url 'elderly_home' %}" class="absolute left-6 top-5 text-gray-400 hover:text-orange-500 text-2xl font-bold transition">
+            ←
+        </a>
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow flex flex-col items-center p-6 w-full max-w-md mx-auto">
+        
+        <h2 class="text-2xl font-bold mb-6 text-gray-700 w-full text-left">これまでの記録</h2>
+
+        <!-- 履歴カード 1件目 -->
+        <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-orange-100 w-full mb-6 relative">
+            <!-- ステータスバッジ -->
+            <div class="absolute top-4 right-4 bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
+                完了（6月1日）
+            </div>
+
+            <!-- 依頼内容 -->
+            <div class="mb-4 pt-2">
+                <p class="text-sm font-bold text-gray-400 mb-1">お願いしたこと</p>
+                <p class="text-xl font-bold text-gray-800">電球の交換をお願いしたいです</p>
+            </div>
+
+            <!-- 来てくれた学生の情報 -->
+            <div class="bg-orange-50 rounded-2xl p-4 flex items-center justify-between mb-4 border border-orange-100">
+                <div class="flex items-center gap-3">
+                    <div class="text-4xl">🧑‍🎓</div>
+                    <div>
+                        <p class="text-xs text-orange-500 font-bold mb-1">来てくれた学生</p>
+                        <p class="font-bold text-gray-800">東洋 太郎 さん</p>
+                    </div>
+                </div>
+                <!-- 学生のマイページへ飛ぶボタン（仮のURLを入れています） -->
+                <a href="#" class="bg-white border border-orange-200 text-orange-500 hover:bg-orange-100 text-xs font-bold py-2 px-3 rounded-lg transition shadow-sm">
+                    プロフィールを見る
+                </a>
+            </div>
+
+            <!-- 最強機能：もう一度頼むボタン -->
+            <!-- 押すと、この内容を持ったまま依頼作成（または確認）画面へ飛ぶ想定 -->
+            <a href="{% url 'elderly_request_confirm' %}" class="w-full border-2 border-orange-500 text-orange-500 hover:bg-orange-50 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 block text-center">
+                <span>🔄</span> 同じ内容でもう一度頼む
+            </a>
+        </div>
+
+        <!-- 履歴カード 2件目 -->
+        <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-orange-100 w-full mb-6 relative">
+            <div class="absolute top-4 right-4 bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
+                完了（5月15日）
+            </div>
+            <div class="mb-4 pt-2">
+                <p class="text-sm font-bold text-gray-400 mb-1">お願いしたこと</p>
+                <p class="text-xl font-bold text-gray-800">スーパーで重いお米を買ってきてほしい</p>
+            </div>
+            <div class="bg-orange-50 rounded-2xl p-4 flex items-center justify-between mb-4 border border-orange-100">
+                <div class="flex items-center gap-3">
+                    <div class="text-4xl">👩‍🎓</div>
+                    <div>
+                        <p class="text-xs text-orange-500 font-bold mb-1">来てくれた学生</p>
+                        <p class="font-bold text-gray-800">山田 花子 さん</p>
+                    </div>
+                </div>
+                <a href="#" class="bg-white border border-orange-200 text-orange-500 hover:bg-orange-100 text-xs font-bold py-2 px-3 rounded-lg transition shadow-sm">
+                    プロフィールを見る
+                </a>
+            </div>
+            <a href="{% url 'elderly_request_confirm' %}" class="w-full border-2 border-orange-500 text-orange-500 hover:bg-orange-50 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 block text-center">
+                <span>🔄</span> 同じ内容でもう一度頼む
+            </a>
+        </div>
+
+    </main>
+</body>
+</html>

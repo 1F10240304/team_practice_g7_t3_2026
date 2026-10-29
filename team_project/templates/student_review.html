@@ -1,0 +1,61 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完了報告・学びの記録 | ここにいるよ</title>
+    <!-- Tailwind CSSの読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="bg-blue-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm py-4 px-6 text-center border-b border-blue-100">
+        <h1 class="text-xl font-bold text-blue-500 tracking-wider">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow flex flex-col items-center p-6 w-full max-w-md mx-auto">
+        
+        <div class="text-6xl mb-4 animate-bounce">🎉</div>
+        <h2 class="text-2xl font-bold mb-2 text-gray-700">おつかれさまでした！</h2>
+        <p class="text-gray-500 text-sm mb-8 text-center">
+            作業と交流が無事に終了しました。<br>
+            今日の「学び」を記録して、ガクチカに活かしましょう。
+        </p>
+
+        <!-- 学びの記録フォーム -->
+        <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-blue-100 w-full mb-8">
+            
+            <!-- ※あとでバックエンドの保存処理に繋ぐためのフォームです -->
+            <form action="{% url 'student_mypage' %}" method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-2 flex items-center gap-2">
+                    <span class="text-orange-500 text-xl">💡</span>
+                    <label class="text-gray-700 font-bold">今日教わったこと・気づき</label>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">
+                    ※おばあちゃんから聞いた昔話や、生活の知恵など、簡単なメモでOKです。この記録があなたの活動実績になります。
+                </p>
+                
+                <textarea 
+                    name="learning_memo" 
+                    rows="5" 
+                    class="w-full border-2 border-blue-100 rounded-xl p-4 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200 transition text-gray-700"
+                    placeholder="例：昔の商店街は夕方になると、お豆腐屋さんのラッパの音が聞こえてきたそうです。世代間のコミュニケーションの取り方について学びがありました。"
+                ></textarea>
+
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-full text-lg shadow-lg transition-transform transform hover:scale-105 mt-6">
+                    記録を保存してホームに戻る
+                </button>
+            </form>
+        </div>
+        
+    </main>
+
+</body>
+</html>
