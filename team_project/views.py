@@ -385,6 +385,24 @@ def elderly_status(request):
         "helper_profile": helper_profile,
     })
 
+@login_required
+def my_requests(request):
+    """自分の依頼一覧: 自分が出した依頼を、新しい順にすべて表示する"""
+    if response := _senior_only(request):
+        return response
+
+    my_help_requests = HelpRequest.objects.filter(
+        requester=request.user
+    ).select_related("helper", "talk_theme").order_by("-created_at")
+
+    return render(request, "elderly_my_requests.html", {
+        "help_requests": my_help_requests,
+    })
+
+# 学生側の依頼詳細ページを表示する関数
+def student_request_detail(request, pk):
+    return render(request, 'student_request_detail.html')
+=======
 # 学生側の依頼詳細ページを表示する関数
 @login_required
 def student_request_detail(request, pk):
@@ -402,14 +420,20 @@ def student_request_detail(request, pk):
 def student_session_active(request, pk):
     return render(request, 'student_session_active.html')
 
-# 学生側の完了報告（学びの記録）ページ（※枠組みだけ先に作っておきます）
+
+# 学生側の完了報告（学びの記録）ページ
 def student_review(request):
-    return render(request, 'student_review.html') # ファイルは後で作ります
+    return render(request, 'student_review.html')
+
+=======
 
 # ガクチカ活動証明書ページ
 def student_gakuchika(request):
     return render(request, 'student_gakuchika.html')
 
+=======
+
 # 高齢者の履歴ページを表示する関数
 def elderly_history(request):
     return render(request, 'elderly_history.html')
+

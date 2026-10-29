@@ -1,0 +1,53 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お願いした一覧 | ここにいるよ</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/elderly_my_requests.css' %}">
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <h2 class="question-text">お願いした一覧</h2>
+
+        {% for r in help_requests %}
+            <div class="my-request-card">
+                <p class="my-request-title">{{ r.title }}</p>
+                <p class="my-request-meta">
+                    {{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}　{{ r.area }}
+                </p>
+
+                <!-- 状態ごとに色とことばを変える -->
+                {% if r.status == "open" %}
+                    <p class="my-request-status status-open">🔍 学生を探しています</p>
+                {% elif r.status == "accepted" %}
+                    <p class="my-request-status status-accepted">
+                        🤝 {{ r.helper.studentprofile.name|default:"学生" }} さんが来てくれます
+                    </p>
+                {% else %}
+                    <p class="my-request-status status-done">✅ おわりました</p>
+                    {% if r.talk_theme %}
+                        <p class="my-request-theme">💡 お話のきっかけ：{{ r.talk_theme.text }}</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% empty %}
+            <p class="instruction-text">まだお願いはありません。</p>
+        {% endfor %}
+
+        <a href="{% url 'create_request' %}" class="btn-submit">新しくお願いする</a>
+        <a href="{% url 'elderly_home' %}" class="back-link">ホームに戻る</a>
+    </main>
+
+</body>
+</html>
