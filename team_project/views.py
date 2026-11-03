@@ -402,7 +402,7 @@ def my_requests(request):
 # 学生側の依頼詳細ページを表示する関数
 def student_request_detail(request, pk):
     return render(request, 'student_request_detail.html')
-=======
+
 # 学生側の依頼詳細ページを表示する関数
 @login_required
 def student_request_detail(request, pk):
@@ -425,15 +425,18 @@ def student_session_active(request, pk):
 def student_review(request):
     return render(request, 'student_review.html')
 
-=======
+
 
 # ガクチカ活動証明書ページ
 def student_gakuchika(request):
     return render(request, 'student_gakuchika.html')
 
-=======
+
 
 # 高齢者の履歴ページを表示する関数
 def elderly_history(request):
     return render(request, 'elderly_history.html')
 
+def elderly_request_confirm(request):
+    # 必要な処理やレンダリングを記述
+    return render(request, 'team_project/elderly_request_confirm.html')
