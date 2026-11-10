@@ -51,7 +51,14 @@
             </div>
 
             <!-- 作業が終わった後の「ありがとう送信（レビュー）」ページへ繋ぐボタン -->
-            <a href="{% url 'elderly_review' %}" class="btn-submit">作業が終わったら押す</a>
+            {% if help_request.helper %}
+                <a href="{% url 'elderly_review' help_request.pk %}" class="btn-submit">作業が終わったら押す</a>
+            {% else %}
+                <!-- デモ表示のときは本当の学生がいないので、評価には進めない -->
+                <p class="instruction-text">（デモ表示です。学生が実際に引き受けると、ここから「ありがとう」を送れます）</p>
+                <a href="{% url 'my_requests' %}" class="back-link">お願いした一覧を見る</a>
+                <a href="{% url 'elderly_home' %}" class="back-link">ホームに戻る</a>
+            {% endif %}
         </div>
 
         <!-- ==========================================

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -73,3 +74,34 @@ class TalkTheme(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class Review(models.Model):
+    """依頼が終わったあとの評価（高齢者 → 学生、学生 → 高齢者のどちらにも使う）"""
+    help_request = models.ForeignKey(
+        HelpRequest,
+        verbose_name="依頼",
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    # 評価を書いた人
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="評価した人",
+        on_delete=models.CASCADE,
+        related_name="reviews_written",
+    )
+    rating = models.PositiveSmallIntegerField(
+        "評価", validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment = models.TextField("ひとこと", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            # 同じ人が同じ依頼を二度評価できないようにする
+            models.UniqueConstraint(fields=["help_request", "reviewer"],
+                                    name="unique_review_per_request"),
+        ]
+
+    def __str__(self):
+        return f"{self.help_request.title}（★{self.rating}）"

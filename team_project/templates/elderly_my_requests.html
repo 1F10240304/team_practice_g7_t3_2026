@@ -40,6 +40,9 @@
                         <p class="my-request-theme">💡 お話のきっかけ：{{ r.talk_theme.text }}</p>
                     {% endif %}
                 {% endif %}
+                {% if r.helper and r.status != "open" and not r.reviewed %}
+                    <a href="{% url 'elderly_review' r.pk %}" class="btn-submit">ありがとうを送る</a>
+                {% endif %}
             </div>
         {% empty %}
             <p class="instruction-text">まだお願いはありません。</p>
