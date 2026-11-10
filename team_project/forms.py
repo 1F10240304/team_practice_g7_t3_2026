@@ -3,7 +3,7 @@ from datetime import datetime
 from django import forms
 from django.utils import timezone
 
-from .models import HelpRequest, SeniorProfile, StudentProfile
+from .models import HelpRequest, Review, SeniorProfile, StudentProfile
 
 
 class StudentProfileForm(forms.ModelForm):
@@ -63,3 +63,14 @@ class HelpRequestForm(forms.ModelForm):
         if commit:
             help_request.save()
         return help_request
+
+
+class ReviewForm(forms.ModelForm):
+    """依頼が終わったあとの評価（星1〜5と、なくてもよいひとこと）"""
+    class Meta:
+        model = Review
+        fields = ["rating", "comment"]
+        widgets = {"rating": forms.HiddenInput()}  # 星は画面のボタンで選ぶ
+        error_messages = {
+            "rating": {"required": "星をタップして評価を選んでください。"},
+        }
