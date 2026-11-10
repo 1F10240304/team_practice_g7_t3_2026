@@ -748,3 +748,65 @@ class ScheduleFromTextTests(TestCase):
                          (date(2026, 10, 22), time(10), time(12)))
 
 
+
+
+class PageAccessTests(TestCase):
+    """仮の画面も、ログインしていて役割が合う人だけが開ける"""
+
+    SENIOR_PAGES = ["elderly_home", "elderly_review", "elderly_history"]
+    STUDENT_PAGES = ["student_review", "student_gakuchika"]
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+
+    def _all_urls(self):
+        urls = [reverse(name) for name in self.SENIOR_PAGES + self.STUDENT_PAGES]
+        return urls + [reverse("student_session_active", args=[1])]
+
+    def test_ログインしていないとログイン画面へ(self):
+        for url in self._all_urls():
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.url.startswith(reverse("login")))
+
+    def test_高齢者は高齢者の画面を開ける(self):
+        self.client.force_login(self.senior)
+        for name in self.SENIOR_PAGES:
+            with self.subTest(name=name):
+                self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+
+    def test_学生は学生の画面を開ける(self):
+        self.client.force_login(self.student)
+        for name in self.STUDENT_PAGES:
+            with self.subTest(name=name):
+                self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+        self.assertEqual(
+            self.client.get(reverse("student_session_active", args=[1])).status_code, 200)
+
+    def test_学生が高齢者の画面を開くと学生ホームへ(self):
+        self.client.force_login(self.student)
+        for name in self.SENIOR_PAGES:
+            with self.subTest(name=name):
+                self.assertRedirects(self.client.get(reverse(name)), reverse("home"),
+                                     target_status_code=302)
+
+    def test_高齢者が学生の画面を開くと高齢者ホームへ(self):
+        self.client.force_login(self.senior)
+        for name in self.STUDENT_PAGES:
+            with self.subTest(name=name):
+                self.assertRedirects(self.client.get(reverse(name)), reverse("home"),
+                                     target_status_code=302)
+
+    def test_依頼作成の次へボタンはフォームを送信する(self):
+        self.client.force_login(self.senior)
+        response = self.client.get(reverse("create_request"))
+        self.assertContains(response, '<button type="submit" id="submit-btn"')
+
+    def test_履歴のもう一度頼むは依頼作成へ(self):
+        self.client.force_login(self.senior)
+        response = self.client.get(reverse("elderly_history"))
+        self.assertContains(response, f'href="{reverse("create_request")}"')

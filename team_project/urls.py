@@ -37,6 +37,5 @@ urlpatterns = [
     path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
     # 高齢者ホームの下あたりに追加
     path('elderly-history/', views.elderly_history, name='elderly_history'),
-    path('elderly-request-confirm/', views.elderly_request_confirm, name='elderly_request_confirm'),
 ]
 
