@@ -245,13 +245,15 @@ def index(request):
 
 
 # 高齢者ホーム画面を表示する関数
+@login_required
 def elderly_home(request):
-    return render(request, 'elderly_home.html')
+    return _senior_only(request) or render(request, 'elderly_home.html')
 
 
 # ありがとう送信（レビュー）画面を表示する関数
+@login_required
 def elderly_review(request):
-    return render(request, 'elderly_review.html')
+    return _senior_only(request) or render(request, 'elderly_review.html')
 
 
 # 「明日」「6/1」などの言葉 → 何日後か・何月何日か
@@ -301,6 +303,13 @@ _MISSING_LABELS = {"title": "お願いの内容", "location": "場所", "desired
 def _senior_only(request):
     """高齢者でなければ自分のホームへ戻すレスポンスを返す（高齢者なら None）"""
     if _role(request.user) != "senior":
+        return redirect("home")
+    return None
+
+
+def _student_only(request):
+    """学生でなければ自分のホームへ戻すレスポンスを返す（学生なら None）"""
+    if _role(request.user) != "student":
         return redirect("home")
     return None
 
@@ -400,10 +409,6 @@ def my_requests(request):
     })
 
 # 学生側の依頼詳細ページを表示する関数
-def student_request_detail(request, pk):
-    return render(request, 'student_request_detail.html')
-
-# 学生側の依頼詳細ページを表示する関数
 @login_required
 def student_request_detail(request, pk):
     help_request = get_object_or_404(HelpRequest, pk=pk)
@@ -417,26 +422,24 @@ def student_request_detail(request, pk):
 
 
 # 学生側の活動中（トークテーマ表示）ページ
+@login_required
 def student_session_active(request, pk):
-    return render(request, 'student_session_active.html')
+    return _student_only(request) or render(request, 'student_session_active.html')
 
 
 # 学生側の完了報告（学びの記録）ページ
+@login_required
 def student_review(request):
-    return render(request, 'student_review.html')
-
+    return _student_only(request) or render(request, 'student_review.html')
 
 
 # ガクチカ活動証明書ページ
+@login_required
 def student_gakuchika(request):
-    return render(request, 'student_gakuchika.html')
-
+    return _student_only(request) or render(request, 'student_gakuchika.html')
 
 
 # 高齢者の履歴ページを表示する関数
+@login_required
 def elderly_history(request):
-    return render(request, 'elderly_history.html')
-
-def elderly_request_confirm(request):
-    # 必要な処理やレンダリングを記述
-    return render(request, 'team_project/elderly_request_confirm.html')
+    return _senior_only(request) or render(request, 'elderly_history.html')
