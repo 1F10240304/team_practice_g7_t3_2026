@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from .models import HelpRequest, SeniorProfile, StudentProfile
 from .models import HelpRequest, Review, SeniorProfile, StudentProfile
 
 
@@ -23,7 +22,6 @@ class StudentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(SeniorProfile)
 class SeniorProfileAdmin(admin.ModelAdmin):
-    list_display = ["name", "area", "user"]    list_display = ["name", "area", "user"]
     list_display = ["name", "area", "user"]
 
 
