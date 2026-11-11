@@ -488,14 +488,4 @@ def student_gakuchika(request):
 # 高齢者の履歴ページを表示する関数
 @login_required
 def elderly_history(request):
-<<<<<<< HEAD
-    return render(request, 'elderly_history.html')
-
-# お願いの確認画面を表示する関数
-def elderly_request_confirm(request):
-    # 本当はここで過去の依頼データを取得してフォームに入れますが、
-    # まずは画面遷移をさせるためだけの仮の処理を書きます
-    return render(request, 'elderly_request_confirm.html')
-=======
     return _senior_only(request) or render(request, 'elderly_history.html')
->>>>>>> f7356d724e568e53ec11894f67a09ba273e074a4
