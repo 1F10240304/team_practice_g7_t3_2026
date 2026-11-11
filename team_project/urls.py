@@ -6,6 +6,8 @@ urlpatterns = [
     path("requests/", views.request_list, name="request_list"),
     path("requests/<int:pk>/accept/", views.accept_request, name="accept_request"),
     path("requests/<int:pk>/complete/", views.complete_request, name="complete_request"),
+    # 自動更新（画面のJSが数秒ごとに確認する）
+    path("live/<str:kind>/", views.live_version, name="live_version"),
     # 新規登録
     path("signup/", views.select_role, name="select_role"),
     path("signup/student/", views.student_signup, name="student_signup"),

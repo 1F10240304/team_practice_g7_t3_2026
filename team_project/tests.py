@@ -984,3 +984,85 @@ class ElderlyReviewTests(TestCase):
         self.assertContains(self.client.get(reverse("my_requests")), f'href="{self.url}"')
         self.client.post(self.url, {"rating": "5"})
         self.assertNotContains(self.client.get(reverse("my_requests")), f'href="{self.url}"')
+
+
+class LiveUpdateTests(TestCase):
+    """自動更新: 相手の操作で「版」が変わり、画面がそれを確かめられる"""
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        start = timezone.now()
+        self.help_request = HelpRequest.objects.create(
+            title="電球の交換", area="東京都北区", start_at=start,
+            end_at=start + timedelta(hours=1), requester=self.senior)
+
+    def _version(self, user, kind, **params):
+        self.client.force_login(user)
+        response = self.client.get(reverse("live_version", args=[kind]), params)
+        self.assertEqual(response.status_code, 200)
+        return response.json()["version"]
+
+    def test_ログインしていないとログイン画面へ(self):
+        response = self.client.get(reverse("live_version", args=["senior"]))
+        self.assertEqual(response.status_code, 302)
+
+    def test_知らない種類は404(self):
+        self.client.force_login(self.senior)
+        response = self.client.get(reverse("live_version", args=["unknown"]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_何も変わらなければ版は同じ(self):
+        self.assertEqual(self._version(self.senior, "senior"),
+                         self._version(self.senior, "senior"))
+
+    def test_学生が引き受けると高齢者の版が変わる(self):
+        before = self._version(self.senior, "senior")
+        self.client.force_login(self.student)
+        self.client.post(reverse("accept_request", args=[self.help_request.pk]))
+        self.assertNotEqual(self._version(self.senior, "senior"), before)
+
+    def test_引き受けられると学生の募集中一覧の版が変わる(self):
+        before = self._version(self.student, "open")
+        self.client.post(reverse("accept_request", args=[self.help_request.pk]))
+        self.assertNotEqual(self._version(self.student, "open"), before)
+
+    def test_新しい依頼が出ると募集中一覧の版が変わる(self):
+        before = self._version(self.student, "open")
+        HelpRequest.objects.create(
+            title="買い物", area="東京都北区", start_at=timezone.now(),
+            end_at=timezone.now() + timedelta(hours=1), requester=self.senior)
+        self.assertNotEqual(self._version(self.student, "open"), before)
+
+    def test_地域で絞り込んだ一覧はほかの地域の依頼では変わらない(self):
+        before = self._version(self.student, "open", area="世田谷区")
+        HelpRequest.objects.create(
+            title="買い物", area="東京都北区", start_at=timezone.now(),
+            end_at=timezone.now() + timedelta(hours=1), requester=self.senior)
+        self.assertEqual(self._version(self.student, "open", area="世田谷区"), before)
+
+    def test_高齢者が評価すると学生の引き受け一覧の版が変わる(self):
+        self.client.force_login(self.student)
+        self.client.post(reverse("accept_request", args=[self.help_request.pk]))
+        before = self._version(self.student, "student")
+        self.client.force_login(self.senior)
+        self.client.post(reverse("elderly_review", args=[self.help_request.pk]), {"rating": 5})
+        self.assertNotEqual(self._version(self.student, "student"), before)
+
+    def test_画面に自動更新の部品が入っている(self):
+        pages = [
+            (self.senior, reverse("elderly_status"), "senior"),
+            (self.senior, reverse("my_requests"), "senior"),
+            (self.student, reverse("student_home"), "open"),
+            (self.student, reverse("request_list"), "open"),
+            (self.student, reverse("student_accepted_requests"), "student"),
+        ]
+        for user, url, kind in pages:
+            with self.subTest(url=url):
+                self.client.force_login(user)
+                response = self.client.get(url)
+                self.assertContains(response, 'id="live-update"')
+                self.assertContains(response, reverse("live_version", args=[kind]))
+                self.assertContains(response, "js/live_update.js")
