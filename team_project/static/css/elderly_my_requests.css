@@ -35,3 +35,40 @@
     margin: 10px 0 0;
     color: #4b5563;
 }
+.status-canceled { color: #9ca3af; }
+
+.my-request-link {
+    display: inline-block;
+    margin-top: 10px;
+    vertical-align: middle;
+    font-size: 18px;
+    color: #ea580c;
+}
+
+.my-request-message {
+    background-color: #ecfdf5;
+    border: 2px solid #6ee7b7;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 18px;
+    width: 100%;
+    max-width: 450px;
+    box-sizing: border-box;
+}
+
+/* カードの中の「ありがとうを送る」ボタン（画面下の大きなボタンより控えめにする） */
+.my-request-thanks {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 10px 0 0 12px;
+    padding: 8px 20px;
+    font-size: 17px;
+    font-weight: bold;
+    color: white;
+    background-color: #10b981;
+    border-radius: 24px;
+    text-decoration: none;
+}
+.my-request-thanks:hover {
+    background-color: #059669;
+}

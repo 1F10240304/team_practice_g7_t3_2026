@@ -8,6 +8,7 @@ class HelpRequest(models.Model):
         OPEN = "open", "募集中"
         ACCEPTED = "accepted", "引き受け済み"
         DONE = "done", "完了"
+        CANCELED = "canceled", "取り消し"  # 高齢者が募集中に取り消した
 
     title = models.CharField("依頼内容", max_length=100)   # 例: 電球の交換をお願いしたいです
     area = models.CharField("地域", max_length=50)          # 例: 東京都世田谷区

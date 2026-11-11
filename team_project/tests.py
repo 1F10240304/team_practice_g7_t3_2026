@@ -1,4 +1,4 @@
-from datetime import date, time, timedelta
+from datetime import date, datetime, time, timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -682,12 +682,12 @@ class ElderlyRequestFlowTests(TestCase):
     def test_これでお願いすると保存されて待機画面へ(self, _):
         self.client.force_login(self.senior)
         response = self.client.post(reverse("save_request"), self.save_data)
-        self.assertRedirects(response, reverse("elderly_status"))
         help_request = HelpRequest.objects.get()
+        self.assertRedirects(response, reverse("elderly_request_status", args=[help_request.pk]))
         self.assertEqual(help_request.requester, self.senior)
         self.assertEqual(help_request.status, HelpRequest.Status.OPEN)
         self.assertEqual(timezone.localtime(help_request.start_at).hour, 9)
-        self.assertContains(self.client.get(reverse("elderly_status")), "学生を探しています")
+        self.assertContains(self.client.get(reverse("elderly_status"), follow=True), "学生を探しています")
 
     def test_終わりの時間が始まりより前だと保存しない(self, _):
         self.client.force_login(self.senior)
@@ -707,7 +707,7 @@ class ElderlyRequestFlowTests(TestCase):
         self.client.force_login(self.senior)
         self.client.post(reverse("save_request"), self.save_data)
         HelpRequest.objects.update(status=HelpRequest.Status.ACCEPTED, helper=self.student)
-        response = self.client.get(reverse("elderly_status"))
+        response = self.client.get(reverse("elderly_status"), follow=True)
         self.assertContains(response, "山田太郎 さん")
         self.assertContains(response, "東洋大学")
 
@@ -806,9 +806,10 @@ class PageAccessTests(TestCase):
         response = self.client.get(reverse("create_request"))
         self.assertContains(response, '<button type="submit" id="submit-btn"')
 
-    def test_履歴のもう一度頼むは依頼作成へ(self):
+    def test_記録がないときは依頼作成へ案内する(self):
         self.client.force_login(self.senior)
         response = self.client.get(reverse("elderly_history"))
+        self.assertContains(response, "まだ終わったお願いはありません。")
         self.assertContains(response, f'href="{reverse("create_request")}"')
 
 
@@ -900,10 +901,185 @@ class ElderlyReviewTests(TestCase):
         self.assertTrue(response.url.startswith(reverse("login")))
 
     def test_待機画面の終わったらボタンから評価画面へ行ける(self):
-        response = self.client.get(reverse("elderly_status"))
+        response = self.client.get(reverse("elderly_status"), follow=True)
         self.assertContains(response, f'href="{self.url}"')
 
     def test_一覧には評価していない依頼にだけありがとうボタンが出る(self):
         self.assertContains(self.client.get(reverse("my_requests")), f'href="{self.url}"')
         self.client.post(self.url, {"rating": "5"})
         self.assertNotContains(self.client.get(reverse("my_requests")), f'href="{self.url}"')
+
+
+
+class ElderlyRequestManageTests(TestCase):
+    """高齢者の依頼ごとの待機画面・取り消し・これまでの記録・もう一度頼む"""
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        self.other = User.objects.create_user(username="other", password="pass")
+        SeniorProfile.objects.create(user=self.other, name="鈴木花子", area="東京都北区")
+        self.client.force_login(self.senior)
+
+    def _create(self, title="電球の交換をお願いしたいです", requester=None, **kwargs):
+        start = timezone.make_aware(datetime(2026, 12, 1, 14, 0))
+        return HelpRequest.objects.create(
+            title=title, area="東京都北区", start_at=start, end_at=start + timedelta(hours=2),
+            requester=requester or self.senior, **kwargs)
+
+    # ---- 待機画面の振り分け
+    def test_待っている依頼が1件ならその待機画面へ(self):
+        r = self._create()
+        self.assertRedirects(self.client.get(reverse("elderly_status")),
+                             reverse("elderly_request_status", args=[r.pk]))
+
+    def test_待っている依頼が2件以上なら一覧へ(self):
+        self._create()
+        self._create(title="買い物をお願いしたいです")
+        self.assertRedirects(self.client.get(reverse("elderly_status")), reverse("my_requests"))
+
+    def test_それぞれの依頼の待機画面を開ける(self):
+        first = self._create()
+        second = self._create(title="買い物をお願いしたいです")
+        response = self.client.get(reverse("elderly_request_status", args=[first.pk]))
+        self.assertContains(response, "電球の交換をお願いしたいです")
+        self.assertNotContains(response, "買い物をお願いしたいです")
+        response = self.client.get(reverse("elderly_request_status", args=[second.pk]))
+        self.assertContains(response, "買い物をお願いしたいです")
+
+    def test_取り消した依頼と終わった依頼は待っている数に入らない(self):
+        self._create(status=HelpRequest.Status.CANCELED)
+        self._create(status=HelpRequest.Status.DONE, helper=self.student)
+        self.assertRedirects(self.client.get(reverse("elderly_status")), reverse("elderly_home"))
+
+    def test_終わった依頼の待機画面は一覧へ(self):
+        r = self._create(status=HelpRequest.Status.DONE, helper=self.student)
+        self.assertRedirects(self.client.get(reverse("elderly_request_status", args=[r.pk])),
+                             reverse("my_requests"))
+
+    def test_ほかの人の依頼の待機画面は開けない(self):
+        r = self._create(requester=self.other)
+        self.assertEqual(
+            self.client.get(reverse("elderly_request_status", args=[r.pk])).status_code, 404)
+
+    # ---- 取り消し
+    def test_募集中の待機画面に取り消しボタンが出る(self):
+        r = self._create()
+        response = self.client.get(reverse("elderly_request_status", args=[r.pk]))
+        self.assertContains(response, f'action="{reverse("cancel_request", args=[r.pk])}"')
+
+    def test_学生が引き受けたあとは取り消しボタンが出ない(self):
+        r = self._create(status=HelpRequest.Status.ACCEPTED, helper=self.student)
+        response = self.client.get(reverse("elderly_request_status", args=[r.pk]))
+        self.assertNotContains(response, reverse("cancel_request", args=[r.pk]))
+
+    def test_募集中なら取り消せて学生の一覧から消える(self):
+        r = self._create()
+        response = self.client.post(reverse("cancel_request", args=[r.pk]), follow=True)
+        self.assertRedirects(response, reverse("my_requests"))
+        self.assertContains(response, "お願いを取り消しました。")
+        self.assertContains(response, "✖ 取り消しました")
+        r.refresh_from_db()
+        self.assertEqual(r.status, HelpRequest.Status.CANCELED)
+        self.client.force_login(self.student)
+        self.assertNotContains(self.client.get(reverse("student_home")),
+                               "電球の交換をお願いしたいです")
+
+    def test_取り消した依頼は引き受けられない(self):
+        r = self._create(status=HelpRequest.Status.CANCELED)
+        self.client.force_login(self.student)
+        self.client.post(reverse("accept_request", args=[r.pk]))
+        r.refresh_from_db()
+        self.assertEqual((r.status, r.helper), (HelpRequest.Status.CANCELED, None))
+
+    def test_学生が引き受けたあとは取り消せない(self):
+        r = self._create(status=HelpRequest.Status.ACCEPTED, helper=self.student)
+        response = self.client.post(reverse("cancel_request", args=[r.pk]), follow=True)
+        self.assertContains(response, "取り消せませんでした")
+        r.refresh_from_db()
+        self.assertEqual(r.status, HelpRequest.Status.ACCEPTED)
+
+    def test_ほかの人の依頼は取り消せない(self):
+        r = self._create(requester=self.other)
+        self.assertEqual(self.client.post(reverse("cancel_request", args=[r.pk])).status_code, 404)
+        r.refresh_from_db()
+        self.assertEqual(r.status, HelpRequest.Status.OPEN)
+
+    def test_取り消しはPOSTだけ(self):
+        r = self._create()
+        self.assertEqual(self.client.get(reverse("cancel_request", args=[r.pk])).status_code, 405)
+
+    def test_学生は取り消せない(self):
+        r = self._create()
+        self.client.force_login(self.student)
+        self.client.post(reverse("cancel_request", args=[r.pk]))
+        r.refresh_from_db()
+        self.assertEqual(r.status, HelpRequest.Status.OPEN)
+
+    # ---- これまでの記録
+    def test_記録には終わった依頼と来てくれた学生が出る(self):
+        done = self._create(status=HelpRequest.Status.DONE, helper=self.student)
+        TalkTheme.objects.create(help_request=done, text="昔の家の明かりの話")
+        self._create(title="買い物をお願いしたいです")  # まだ終わっていない
+        response = self.client.get(reverse("elderly_history"))
+        self.assertContains(response, "電球の交換をお願いしたいです")
+        self.assertContains(response, "山田太郎 さん")
+        self.assertContains(response, "東洋大学")
+        self.assertContains(response, "昔の家の明かりの話")
+        self.assertContains(response, "完了（12月1日）")
+        self.assertNotContains(response, "買い物をお願いしたいです")
+
+    def test_記録にほかの人の依頼は出ない(self):
+        self._create(title="ほかの人のお願い", requester=self.other,
+                     status=HelpRequest.Status.DONE, helper=self.student)
+        self.assertNotContains(self.client.get(reverse("elderly_history")), "ほかの人のお願い")
+
+    def test_評価していなければありがとうボタン送っていれば星が出る(self):
+        done = self._create(status=HelpRequest.Status.DONE, helper=self.student)
+        review_url = reverse("elderly_review", args=[done.pk])
+        self.assertContains(self.client.get(reverse("elderly_history")), f'href="{review_url}"')
+        Review.objects.create(help_request=done, reviewer=self.senior, rating=4)
+        response = self.client.get(reverse("elderly_history"))
+        self.assertNotContains(response, f'href="{review_url}"')
+        self.assertContains(response, "★★★★<span")
+
+    # ---- もう一度頼む
+    def test_記録からもう一度頼むへ行ける(self):
+        done = self._create(status=HelpRequest.Status.DONE, helper=self.student)
+        self.assertContains(self.client.get(reverse("elderly_history")),
+                            f'href="{reverse("request_again", args=[done.pk])}"')
+
+    def test_もう一度頼むと前回の内容が入った確認画面になる(self):
+        done = self._create(status=HelpRequest.Status.DONE, helper=self.student)
+        with mock.patch("team_project.views.timezone.localdate", return_value=date(2026, 11, 11)):
+            response = self.client.get(reverse("request_again", args=[done.pk]))
+        self.assertTemplateUsed(response, "elderly_request_confirm.html")
+        self.assertContains(response, "前にお願いした内容")
+        self.assertContains(response, 'value="電球の交換をお願いしたいです"')
+        self.assertContains(response, 'value="東京都北区"')
+        self.assertContains(response, 'value="2026-11-12"')   # 日にちは明日
+        self.assertContains(response, 'value="14:00"')        # 時間帯は前回と同じ
+        self.assertContains(response, 'value="16:00"')
+        self.assertContains(response, f'action="{reverse("save_request")}"')
+
+    def test_もう一度頼んで保存すると新しい依頼になる(self):
+        done = self._create(status=HelpRequest.Status.DONE, helper=self.student)
+        self.client.post(reverse("save_request"), {
+            "title": done.title, "area": done.area,
+            "date": "2026-12-10", "start_time": "14:00", "end_time": "16:00",
+        })
+        self.assertEqual(HelpRequest.objects.filter(title=done.title).count(), 2)
+        new = HelpRequest.objects.latest("created_at")
+        self.assertEqual((new.status, new.helper), (HelpRequest.Status.OPEN, None))
+
+    def test_取り消した依頼も一覧からもう一度頼める(self):
+        r = self._create(status=HelpRequest.Status.CANCELED)
+        self.assertContains(self.client.get(reverse("my_requests")),
+                            f'href="{reverse("request_again", args=[r.pk])}"')
+
+    def test_ほかの人の依頼はもう一度頼めない(self):
+        r = self._create(requester=self.other, status=HelpRequest.Status.DONE)
+        self.assertEqual(
+            self.client.get(reverse("request_again", args=[r.pk])).status_code, 404)

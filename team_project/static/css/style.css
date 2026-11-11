@@ -959,3 +959,16 @@ a.btn-submit {
     display: inline-block;
 }
 
+
+
+/* 待機画面の「このお願いを取り消す」ボタン（目立ちすぎない色にする） */
+.cancel-btn {
+    margin-top: 30px;
+    padding: 12px 28px;
+    font-size: 18px;
+    background: white;
+    color: #dc2626;
+    border: 2px solid #fca5a5;
+    border-radius: 30px;
+    cursor: pointer;
+}
