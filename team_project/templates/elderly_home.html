@@ -16,6 +16,7 @@
     <!-- ヘッダー -->
     <header class="header">
         <h1 class="header-title">ここにいるよ</h1>
+        <a href="{% url 'senior_mypage' %}" class="page-link header-mypage">マイページ</a>
     </header>
 
     <!-- メインコンテンツ -->
@@ -39,10 +40,7 @@
             <h3 style="font-size: 24px; margin: 0 0 10px 0;">これまでの記録</h3>
             <p style="color: #10b981; margin: 0;">過去の依頼や、来てくれた学生を確認</p>
         </a>
-
-        <!-- マイページへのリンク -->
-        <a href="{% url 'senior_mypage' %}" class="page-link">マイページ</a>
-
+   
         <!-- 戻るリンク -->
         <a href="{% url 'select_role' %}" class="back-link">役割選択に戻る</a>
     </main>

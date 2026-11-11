@@ -26,7 +26,8 @@ urlpatterns = [
     path('create-request/confirm/', views.confirm_request, name='confirm_request'),
     path('create-request/save/', views.save_request, name='save_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
-    path('elderly-review/', views.elderly_review, name='elderly_review'),
+    path('elderly-requests/', views.my_requests, name='my_requests'), 
+    path('elderly-review/<int:pk>/', views.elderly_review, name='elderly_review'),
     # requests/ の下あたりに追加してください
     path("requests/<int:pk>/detail/", views.student_request_detail, name="student_request_detail"),
     # requests/ の下あたりに追加してください
@@ -36,6 +37,5 @@ urlpatterns = [
     path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
     # 高齢者ホームの下あたりに追加
     path('elderly-history/', views.elderly_history, name='elderly_history'),
-    path('elderly-request-confirm/', views.elderly_request_confirm, name='elderly_request_confirm'),
 ]
 

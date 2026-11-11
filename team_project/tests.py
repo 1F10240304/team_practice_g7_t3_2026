@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import HelpRequest, SeniorProfile, StudentProfile, TalkTheme
+from .models import HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
 from .views import _schedule_from_text
 
 User = get_user_model()
@@ -236,6 +236,11 @@ class HomeTests(TestCase):
                             f'href="{reverse("senior_mypage")}"')
         self.assertContains(self.client.get(reverse("senior_mypage")),
                             f'href="{reverse("elderly_home")}"')
+
+    def test_高齢者のマイページから一覧へ行ける(self):
+        self.client.force_login(self.senior)
+        self.assertContains(self.client.get(reverse("senior_mypage")),
+                            f'href="{reverse("my_requests")}"')
 
 
 class StudentHomeRequestTests(TestCase):
@@ -741,3 +746,164 @@ class ScheduleFromTextTests(TestCase):
     def test_読み取れないときは明日の10時から12時(self):
         self.assertEqual(_schedule_from_text("", self.today),
                          (date(2026, 10, 22), time(10), time(12)))
+
+
+
+
+class PageAccessTests(TestCase):
+    """仮の画面も、ログインしていて役割が合う人だけが開ける"""
+
+    SENIOR_PAGES = ["elderly_home", "elderly_history"]
+    STUDENT_PAGES = ["student_review", "student_gakuchika"]
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+
+    def _all_urls(self):
+        urls = [reverse(name) for name in self.SENIOR_PAGES + self.STUDENT_PAGES]
+        return urls + [reverse("student_session_active", args=[1])]
+
+    def test_ログインしていないとログイン画面へ(self):
+        for url in self._all_urls():
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.url.startswith(reverse("login")))
+
+    def test_高齢者は高齢者の画面を開ける(self):
+        self.client.force_login(self.senior)
+        for name in self.SENIOR_PAGES:
+            with self.subTest(name=name):
+                self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+
+    def test_学生は学生の画面を開ける(self):
+        self.client.force_login(self.student)
+        for name in self.STUDENT_PAGES:
+            with self.subTest(name=name):
+                self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+        self.assertEqual(
+            self.client.get(reverse("student_session_active", args=[1])).status_code, 200)
+
+    def test_学生が高齢者の画面を開くと学生ホームへ(self):
+        self.client.force_login(self.student)
+        for name in self.SENIOR_PAGES:
+            with self.subTest(name=name):
+                self.assertRedirects(self.client.get(reverse(name)), reverse("home"),
+                                     target_status_code=302)
+
+    def test_高齢者が学生の画面を開くと高齢者ホームへ(self):
+        self.client.force_login(self.senior)
+        for name in self.STUDENT_PAGES:
+            with self.subTest(name=name):
+                self.assertRedirects(self.client.get(reverse(name)), reverse("home"),
+                                     target_status_code=302)
+
+    def test_依頼作成の次へボタンはフォームを送信する(self):
+        self.client.force_login(self.senior)
+        response = self.client.get(reverse("create_request"))
+        self.assertContains(response, '<button type="submit" id="submit-btn"')
+
+    def test_履歴のもう一度頼むは依頼作成へ(self):
+        self.client.force_login(self.senior)
+        response = self.client.get(reverse("elderly_history"))
+        self.assertContains(response, f'href="{reverse("create_request")}"')
+
+
+class ElderlyReviewTests(TestCase):
+    """高齢者が来てくれた学生を評価する（評価を送ると依頼が完了になる）"""
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        start = timezone.now() + timedelta(days=1)
+        self.help_request = HelpRequest.objects.create(
+            title="電球の交換をお願いしたいです", area="東京都北区",
+            start_at=start, end_at=start + timedelta(hours=2),
+            requester=self.senior, helper=self.student,
+            status=HelpRequest.Status.ACCEPTED)
+        self.url = reverse("elderly_review", args=[self.help_request.pk])
+        self.client.force_login(self.senior)
+
+    def test_来てくれた学生の名前と依頼が表示される(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "山田太郎 さん")
+        self.assertContains(response, "電球の交換をお願いしたいです")
+        self.assertContains(response, f'action="{self.url}"')
+
+    def test_評価を送ると保存されて依頼が完了になる(self):
+        response = self.client.post(self.url, {"rating": "5", "comment": "助かりました"})
+        self.assertRedirects(response, self.url)
+        review = Review.objects.get(help_request=self.help_request)
+        self.assertEqual((review.reviewer, review.rating, review.comment),
+                         (self.senior, 5, "助かりました"))
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.DONE)
+        # 学生が完了を押したときと同じく、トークテーマも作られる
+        self.assertTrue(TalkTheme.objects.filter(help_request=self.help_request).exists())
+
+    def test_送ったあとは送信済みの表示になる(self):
+        self.client.post(self.url, {"rating": "4"})
+        response = self.client.get(self.url)
+        self.assertContains(response, "送信しました！")
+        self.assertNotContains(response, "評価を送る")
+
+    def test_二度送っても評価は1件だけ(self):
+        self.client.post(self.url, {"rating": "5"})
+        self.client.post(self.url, {"rating": "1"})
+        self.assertEqual(Review.objects.get(help_request=self.help_request).rating, 5)
+
+    def test_星を選ばないと保存されない(self):
+        response = self.client.post(self.url, {"rating": "", "comment": "ありがとう"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "星をタップして評価を選んでください。")
+        self.assertFalse(Review.objects.exists())
+        self.help_request.refresh_from_db()
+        self.assertEqual(self.help_request.status, HelpRequest.Status.ACCEPTED)
+
+    def test_星は1から5まで(self):
+        for rating in ["0", "6"]:
+            with self.subTest(rating=rating):
+                self.client.post(self.url, {"rating": rating})
+                self.assertFalse(Review.objects.exists())
+
+    def test_学生が先に完了にしていても評価できる(self):
+        HelpRequest.objects.filter(pk=self.help_request.pk).update(status=HelpRequest.Status.DONE)
+        self.client.post(self.url, {"rating": "5"})
+        self.assertTrue(Review.objects.filter(help_request=self.help_request).exists())
+
+    def test_ほかの人の依頼は評価できない(self):
+        other = User.objects.create_user(username="other", password="pass")
+        SeniorProfile.objects.create(user=other, name="鈴木花子", area="東京都北区")
+        self.client.force_login(other)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.assertEqual(self.client.post(self.url, {"rating": "5"}).status_code, 404)
+        self.assertFalse(Review.objects.exists())
+
+    def test_まだ誰も引き受けていない依頼は評価できない(self):
+        HelpRequest.objects.filter(pk=self.help_request.pk).update(
+            helper=None, status=HelpRequest.Status.OPEN)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+
+    def test_学生は高齢者の評価画面を開けない(self):
+        self.client.force_login(self.student)
+        self.assertRedirects(self.client.get(self.url), reverse("home"),
+                             target_status_code=302)
+
+    def test_ログインしていないとログイン画面へ(self):
+        self.client.logout()
+        response = self.client.get(self.url)
+        self.assertTrue(response.url.startswith(reverse("login")))
+
+    def test_待機画面の終わったらボタンから評価画面へ行ける(self):
+        response = self.client.get(reverse("elderly_status"))
+        self.assertContains(response, f'href="{self.url}"')
+
+    def test_一覧には評価していない依頼にだけありがとうボタンが出る(self):
+        self.assertContains(self.client.get(reverse("my_requests")), f'href="{self.url}"')
+        self.client.post(self.url, {"rating": "5"})
+        self.assertNotContains(self.client.get(reverse("my_requests")), f'href="{self.url}"')

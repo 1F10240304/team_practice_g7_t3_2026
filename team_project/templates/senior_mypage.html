@@ -8,7 +8,10 @@
   <link rel="stylesheet" href="{% static 'css/senior_mypage.css' %}">
 </head>
 <body>
-  <nav class="nav"><a href="{% url 'elderly_home' %}">ホームへもどる</a></nav>
+<nav class="nav">
+  <a href="{% url 'elderly_home' %}">ホームへもどる</a>
+  ／ <a href="{% url 'my_requests' %}">お願いした一覧</a>
+</nav>
   <h1>マイページ</h1>
 
   <section>

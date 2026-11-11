@@ -5,15 +5,16 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.db import transaction
+from django.db import IntegrityError, transaction
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import (HelpRequestForm, SeniorProfileForm, SeniorSignupForm,
+from .forms import (HelpRequestForm, ReviewForm, SeniorProfileForm, SeniorSignupForm,
                     StudentProfileForm, StudentSignupForm)
 from . import ai
-from .models import HelpRequest, SeniorProfile, StudentProfile, TalkTheme
+from .models import HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
 
 
 def _open_requests(area):
@@ -95,14 +96,19 @@ def complete_request(request, pk):
     help_request = get_object_or_404(
         HelpRequest, pk=pk, helper=request.user, status=HelpRequest.Status.ACCEPTED
     )
+    _finish_request(help_request)
+    return redirect("student_accepted_requests")
+
+
+def _finish_request(help_request):
+    """依頼を完了にして、トークテーマを作る（学生の完了・高齢者の評価のどちらからも呼ぶ）"""
     with transaction.atomic():
         help_request.status = HelpRequest.Status.DONE
-        help_request.save()
+        help_request.save(update_fields=["status"])
         TalkTheme.objects.get_or_create(
             help_request=help_request,
             defaults={"text": _talk_theme_text(help_request)},
         )
-    return redirect("student_accepted_requests")
 
 
 def _role(user):
@@ -245,13 +251,51 @@ def index(request):
 
 
 # 高齢者ホーム画面を表示する関数
+@login_required
 def elderly_home(request):
-    return render(request, 'elderly_home.html')
+    return _senior_only(request) or render(request, 'elderly_home.html')
 
 
-# ありがとう送信（レビュー）画面を表示する関数
-def elderly_review(request):
-    return render(request, 'elderly_review.html')
+@login_required
+def elderly_review(request, pk):
+    """ありがとう送信（評価）: 来てくれた学生を星で評価する。
+
+    評価を送ると、まだ完了になっていない依頼は完了になる（学生が完了を押し忘れても進む）。
+    """
+    if response := _senior_only(request):
+        return response
+
+    # 自分が出した依頼で、学生が引き受けたもの（引き受け済み・完了）だけ評価できる
+    help_request = get_object_or_404(
+        HelpRequest, pk=pk, requester=request.user, helper__isnull=False,
+        status__in=[HelpRequest.Status.ACCEPTED, HelpRequest.Status.DONE],
+    )
+    helper_profile = StudentProfile.objects.filter(user=help_request.helper).first()
+    review = Review.objects.filter(help_request=help_request, reviewer=request.user).first()
+
+    form = None
+    if review is None:
+        form = ReviewForm(request.POST or None)
+        if request.method == "POST" and form.is_valid():
+            review = form.save(commit=False)
+            review.help_request = help_request
+            review.reviewer = request.user
+            try:
+                with transaction.atomic():
+                    review.save()
+                    if help_request.status == HelpRequest.Status.ACCEPTED:
+                        _finish_request(help_request)
+            except IntegrityError:
+                pass  # ボタンを2回押したときなど、すでに評価が保存されている
+            # 送ったあとは同じ画面を開き直して「送信しました」を出す（再読み込みで二重に送らない）
+            return redirect("elderly_review", pk=help_request.pk)
+
+    return render(request, "elderly_review.html", {
+        "help_request": help_request,
+        "helper_profile": helper_profile,
+        "review": review,
+        "form": form,
+    })
 
 
 # 「明日」「6/1」などの言葉 → 何日後か・何月何日か
@@ -301,6 +345,13 @@ _MISSING_LABELS = {"title": "お願いの内容", "location": "場所", "desired
 def _senior_only(request):
     """高齢者でなければ自分のホームへ戻すレスポンスを返す（高齢者なら None）"""
     if _role(request.user) != "senior":
+        return redirect("home")
+    return None
+
+
+def _student_only(request):
+    """学生でなければ自分のホームへ戻すレスポンスを返す（学生なら None）"""
+    if _role(request.user) != "student":
         return redirect("home")
     return None
 
@@ -385,6 +436,24 @@ def elderly_status(request):
         "helper_profile": helper_profile,
     })
 
+@login_required
+def my_requests(request):
+    """自分の依頼一覧: 自分が出した依頼を、新しい順にすべて表示する"""
+    if response := _senior_only(request):
+        return response
+
+    my_help_requests = HelpRequest.objects.filter(
+        requester=request.user
+    ).select_related("helper", "talk_theme").annotate(
+        # 自分がもう評価を送ったか（まだなら「ありがとうを送る」ボタンを出す）
+        reviewed=Exists(Review.objects.filter(
+            help_request=OuterRef("pk"), reviewer=request.user)),
+    ).order_by("-created_at")
+
+    return render(request, "elderly_my_requests.html", {
+        "help_requests": my_help_requests,
+    })
+
 # 学生側の依頼詳細ページを表示する関数
 @login_required
 def student_request_detail(request, pk):
@@ -399,19 +468,27 @@ def student_request_detail(request, pk):
 
 
 # 学生側の活動中（トークテーマ表示）ページ
+@login_required
 def student_session_active(request, pk):
-    return render(request, 'student_session_active.html')
+    return _student_only(request) or render(request, 'student_session_active.html')
 
-# 学生側の完了報告（学びの記録）ページ（※枠組みだけ先に作っておきます）
+
+# 学生側の完了報告（学びの記録）ページ
+@login_required
 def student_review(request):
-    return render(request, 'student_review.html') # ファイルは後で作ります
+    return _student_only(request) or render(request, 'student_review.html')
+
 
 # ガクチカ活動証明書ページ
+@login_required
 def student_gakuchika(request):
-    return render(request, 'student_gakuchika.html')
+    return _student_only(request) or render(request, 'student_gakuchika.html')
+
 
 # 高齢者の履歴ページを表示する関数
+@login_required
 def elderly_history(request):
+<<<<<<< HEAD
     return render(request, 'elderly_history.html')
 
 # お願いの確認画面を表示する関数
@@ -419,3 +496,6 @@ def elderly_request_confirm(request):
     # 本当はここで過去の依頼データを取得してフォームに入れますが、
     # まずは画面遷移をさせるためだけの仮の処理を書きます
     return render(request, 'elderly_request_confirm.html')
+=======
+    return _senior_only(request) or render(request, 'elderly_history.html')
+>>>>>>> f7356d724e568e53ec11894f67a09ba273e074a4
