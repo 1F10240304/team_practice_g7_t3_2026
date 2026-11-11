@@ -37,6 +37,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+if DEBUG:
+    # Cloudflare Quick Tunnel でメンバーと共有するため（開発時のみ）
+    ALLOWED_HOSTS += ["localhost", "127.0.0.1", ".trycloudflare.com"]
+    CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com"]
+
 
 # Application definition
 
