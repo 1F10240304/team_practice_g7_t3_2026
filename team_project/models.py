@@ -34,6 +34,8 @@ class HelpRequest(models.Model):
         blank=True,
         related_name="help_requests",
     )
+    # 引き受けた学生が、完了報告で書く「今日教わったこと・気づき」
+    learning_memo = models.TextField("学びメモ", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 

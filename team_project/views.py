@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import (HelpRequestForm, ReviewForm, SeniorProfileForm, SeniorSignupForm,
+from .forms import (HelpRequestForm, LearningMemoForm, ReviewForm, SeniorProfileForm, SeniorSignupForm,
                     StudentProfileForm, StudentSignupForm)
 from . import ai
 from .models import HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
@@ -27,6 +27,7 @@ def _open_requests(area):
     return help_requests
 
 
+@login_required
 def request_list(request):
     """近くの依頼一覧（募集中のみ）"""
     area = request.GET.get("area", "")
@@ -470,13 +471,33 @@ def student_request_detail(request, pk):
 # 学生側の活動中（トークテーマ表示）ページ
 @login_required
 def student_session_active(request, pk):
-    return _student_only(request) or render(request, 'student_session_active.html')
+    return _student_only(request) or render(request, 'student_session_active.html', {"pk": pk})
 
 
 # 学生側の完了報告（学びの記録）ページ
 @login_required
-def student_review(request):
-    return _student_only(request) or render(request, 'student_review.html')
+def student_review(request, pk):
+    """完了報告: 今日の学びを書いて送ると、依頼が完了になる（書き直しもできる）"""
+    if response := _student_only(request):
+        return response
+
+    # 自分が引き受けた依頼（引き受け済み・完了）だけ報告できる
+    help_request = get_object_or_404(
+        HelpRequest, pk=pk, helper=request.user,
+        status__in=[HelpRequest.Status.ACCEPTED, HelpRequest.Status.DONE],
+    )
+    form = LearningMemoForm(request.POST or None, instance=help_request)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            form.save()
+            if help_request.status == HelpRequest.Status.ACCEPTED:
+                _finish_request(help_request)
+        return redirect("student_home")
+
+    return render(request, 'student_review.html', {
+        "help_request": help_request,
+        "form": form,
+    })
 
 
 # ガクチカ活動証明書ページ

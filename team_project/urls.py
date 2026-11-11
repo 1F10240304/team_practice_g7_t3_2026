@@ -32,7 +32,7 @@ urlpatterns = [
     path("requests/<int:pk>/detail/", views.student_request_detail, name="student_request_detail"),
     # requests/ の下あたりに追加してください
     path("requests/<int:pk>/active/", views.student_session_active, name="student_session_active"),
-    path("student-review/", views.student_review, name="student_review"),
+    path("requests/<int:pk>/report/", views.student_review, name="student_review"),
     # 学生マイページの下あたりに追加
     path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
     # 高齢者ホームの下あたりに追加
