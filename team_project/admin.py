@@ -24,6 +24,7 @@ class StudentProfileAdmin(admin.ModelAdmin):
 @admin.register(SeniorProfile)
 class SeniorProfileAdmin(admin.ModelAdmin):
     list_display = ["name", "area", "user"]    list_display = ["name", "area", "user"]
+    list_display = ["name", "area", "user"]
 
 
 @admin.register(Review)
