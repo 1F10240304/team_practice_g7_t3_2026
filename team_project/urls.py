@@ -28,6 +28,9 @@ urlpatterns = [
     path('create-request/confirm/', views.confirm_request, name='confirm_request'),
     path('create-request/save/', views.save_request, name='save_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
+    path('elderly-status/<int:pk>/', views.elderly_request_status, name='elderly_request_status'),
+    path('elderly-requests/<int:pk>/cancel/', views.cancel_request, name='cancel_request'),
+    path('elderly-requests/<int:pk>/again/', views.request_again, name='request_again'),
     path('elderly-requests/', views.my_requests, name='my_requests'), 
     path('elderly-review/<int:pk>/', views.elderly_review, name='elderly_review'),
     # requests/ の下あたりに追加してください
