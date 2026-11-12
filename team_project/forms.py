@@ -65,6 +65,20 @@ class HelpRequestForm(forms.ModelForm):
         return help_request
 
 
+class LearningMemoForm(forms.ModelForm):
+    """学生の完了報告（今日教わったこと・気づき。空のままでは送れない）"""
+    class Meta:
+        model = HelpRequest
+        fields = ["learning_memo"]
+        error_messages = {
+            "learning_memo": {"required": "今日教わったことや気づいたことを、ひとこと書いてください。"},
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["learning_memo"].required = True
+
+
 class ReviewForm(forms.ModelForm):
     """依頼が終わったあとの評価（星1〜5と、なくてもよいひとこと）"""
     class Meta:

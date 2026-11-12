@@ -1,5 +1,7 @@
+import hashlib
 import re
 from datetime import date, time, timedelta
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth import login
@@ -7,11 +9,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.db import IntegrityError, transaction
 from django.db.models import Exists, OuterRef, Subquery
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import (HelpRequestForm, ReviewForm, SeniorProfileForm, SeniorSignupForm,
+from .forms import (HelpRequestForm, LearningMemoForm, ReviewForm, SeniorProfileForm, SeniorSignupForm,
                     StudentProfileForm, StudentSignupForm)
 from . import ai
 from .models import HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
@@ -27,6 +31,51 @@ def _open_requests(area):
     return help_requests
 
 
+# ===== 自動更新（ポーリング） =====
+# 画面のJS（static/js/live_update.js）が数秒ごとに live_version を呼び、
+# 返ってくる「版」が開いたときと変わっていたら、ページを読み込み直す。
+# 版は、相手の操作で変わる部分（依頼の状態・引き受けた学生・評価）だけから作る。
+
+def _live_version(user, kind, area=""):
+    """画面に出ている内容の「版」を返す（kind が不明なら None）"""
+    if kind == "senior":
+        # 高齢者: 自分の依頼の状態・引き受けた学生・送った評価
+        data = [
+            list(HelpRequest.objects.filter(requester=user).order_by("pk")
+                 .values_list("pk", "status", "helper_id")),
+            list(Review.objects.filter(reviewer=user).order_by("help_request_id")
+                 .values_list("help_request_id", flat=True)),
+        ]
+    elif kind == "open":
+        # 学生のホーム・近くの依頼: 募集中の依頼が増えた・減った
+        data = list(_open_requests(area).order_by("pk").values_list("pk", flat=True))
+    elif kind == "student":
+        # 学生の引き受けた依頼: 状態が変わった（高齢者の評価で完了になった など）
+        data = list(HelpRequest.objects.filter(helper=user).order_by("pk")
+                    .values_list("pk", "status"))
+    else:
+        return None
+    return hashlib.sha1(repr(data).encode()).hexdigest()[:16]
+
+
+def _live(request, kind, area=""):
+    """テンプレートに渡す自動更新の情報（確認先のURLと、今の版）"""
+    url = reverse("live_version", args=[kind])
+    if area:
+        url += "?" + urlencode({"area": area})
+    return {"url": url, "version": _live_version(request.user, kind, area)}
+
+
+@login_required
+def live_version(request, kind):
+    """自動更新用: 今の版だけを返す（ページ全体より軽い）"""
+    version = _live_version(request.user, kind, request.GET.get("area", ""))
+    if version is None:
+        raise Http404
+    return JsonResponse({"version": version})
+
+
+@login_required
 def request_list(request):
     """近くの依頼一覧（募集中のみ）"""
     area = request.GET.get("area", "")
@@ -35,6 +84,7 @@ def request_list(request):
     return render(request, "request_list.html", {
         "help_requests": help_requests,
         "area": area,
+        "live": _live(request, "open", area),
     })
 
 
@@ -190,6 +240,7 @@ def student_home(request):
         "profile": profile,
         "help_requests": _open_requests(area),
         "area": area,
+        "live": _live(request, "open", area),
     })
 
 
@@ -207,6 +258,7 @@ def student_accepted_requests(request):
         "profile": profile,
         "accepted_requests": my_requests.filter(status=HelpRequest.Status.ACCEPTED),
         "done_requests": my_requests.filter(status=HelpRequest.Status.DONE),
+        "live": _live(request, "student"),
     })
 
 
@@ -455,6 +507,7 @@ def elderly_request_status(request, pk):
     return render(request, "elderly_status.html", {
         "help_request": help_request,
         "helper_profile": helper_profile,
+        "live": _live(request, "senior"),
     })
 
 
@@ -516,6 +569,7 @@ def my_requests(request):
 
     return render(request, "elderly_my_requests.html", {
         "help_requests": my_help_requests,
+        "live": _live(request, "senior"),
     })
 
 
@@ -535,13 +589,33 @@ def student_request_detail(request, pk):
 # 学生側の活動中（トークテーマ表示）ページ
 @login_required
 def student_session_active(request, pk):
-    return _student_only(request) or render(request, 'student_session_active.html')
+    return _student_only(request) or render(request, 'student_session_active.html', {"pk": pk})
 
 
 # 学生側の完了報告（学びの記録）ページ
 @login_required
-def student_review(request):
-    return _student_only(request) or render(request, 'student_review.html')
+def student_review(request, pk):
+    """完了報告: 今日の学びを書いて送ると、依頼が完了になる（書き直しもできる）"""
+    if response := _student_only(request):
+        return response
+
+    # 自分が引き受けた依頼（引き受け済み・完了）だけ報告できる
+    help_request = get_object_or_404(
+        HelpRequest, pk=pk, helper=request.user,
+        status__in=[HelpRequest.Status.ACCEPTED, HelpRequest.Status.DONE],
+    )
+    form = LearningMemoForm(request.POST or None, instance=help_request)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            form.save()
+            if help_request.status == HelpRequest.Status.ACCEPTED:
+                _finish_request(help_request)
+        return redirect("student_home")
+
+    return render(request, 'student_review.html', {
+        "help_request": help_request,
+        "form": form,
+    })
 
 
 # ガクチカ活動証明書ページ
