@@ -827,6 +827,89 @@ class StudentReportTests(TestCase):
         self.assertContains(response, f'href="{self.url}"')
 
 
+class StudentFlowTests(TestCase):
+    """学生の流れ: 引き受けた依頼 → 活動中 → 完了報告 → 活動証明書"""
+
+    def setUp(self):
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        self.other = User.objects.create_user(username="other", password="pass")
+        StudentProfile.objects.create(user=self.other, name="鈴木", university="他大学")
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤花子", area="東京都北区")
+        start = timezone.now()
+        end = start + timedelta(hours=2)
+        self.active = HelpRequest.objects.create(
+            title="電球の交換をお願いしたいです", area="東京都北区", requester=self.senior,
+            start_at=start, end_at=end, status=HelpRequest.Status.ACCEPTED, helper=self.student)
+        self.done = HelpRequest.objects.create(
+            title="買い物をお願いしたいです", area="東京都板橋区", requester=self.senior,
+            start_at=start, end_at=end, status=HelpRequest.Status.DONE, helper=self.student,
+            learning_memo="お出汁のとり方を教わりました")
+        self.done_no_memo = HelpRequest.objects.create(
+            title="庭の草むしりをお願いしたいです", area="東京都北区", requester=self.senior,
+            start_at=start, end_at=end, status=HelpRequest.Status.DONE, helper=self.student)
+        Review.objects.create(help_request=self.done, reviewer=self.senior, rating=5)
+        Review.objects.create(help_request=self.done_no_memo, reviewer=self.senior, rating=4)
+        # 学生が高齢者を評価しても、「もらったありがとう」には数えない
+        Review.objects.create(help_request=self.done, reviewer=self.student, rating=1)
+        self.client.force_login(self.student)
+
+    def test_活動中の画面に引き受けた依頼の内容が出る(self):
+        response = self.client.get(reverse("student_session_active", args=[self.active.pk]))
+        self.assertContains(response, "電球の交換をお願いしたいです")
+        self.assertContains(response, "佐藤花子")
+        self.assertContains(response, "東京都北区")
+        self.assertNotContains(response, "世田谷区のおばあちゃん")
+
+    def test_活動中の画面は自分が引き受けた依頼だけ(self):
+        self.client.force_login(self.other)
+        url = reverse("student_session_active", args=[self.active.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_完了した依頼の活動中の画面は一覧に戻される(self):
+        response = self.client.get(reverse("student_session_active", args=[self.done.pk]))
+        self.assertRedirects(response, reverse("student_accepted_requests"))
+
+    def test_引き受けた依頼の一覧から活動中と完了報告へ行ける(self):
+        response = self.client.get(reverse("student_accepted_requests"))
+        self.assertContains(response, f'href="{reverse("student_session_active", args=[self.active.pk])}"')
+        self.assertContains(response, f'href="{reverse("student_review", args=[self.done.pk])}"')
+        self.assertContains(response, "学びメモを書き直す")
+        self.assertContains(response, "学びを記録する")
+
+    def test_ホームとマイページから行ける(self):
+        self.assertContains(self.client.get(reverse("student_home")),
+                            f'href="{reverse("student_accepted_requests")}"')
+        self.assertContains(self.client.get(reverse("student_mypage")),
+                            f'href="{reverse("student_gakuchika")}"')
+
+    def test_ガクチカに実際の記録が出る(self):
+        response = self.client.get(reverse("student_gakuchika"))
+        self.assertContains(response, "買い物をお願いしたいです")
+        self.assertContains(response, "お出汁のとり方を教わりました")
+        self.assertContains(response, "★★★★★")
+        self.assertNotContains(response, "昔の商店街は夕方")
+        self.assertNotContains(response, "電球の交換")  # まだ完了していない依頼は出ない
+
+    def test_ガクチカの回数と星の数(self):
+        response = self.client.get(reverse("student_gakuchika"))
+        self.assertEqual(response.context["done_count"], 2)
+        self.assertEqual(response.context["total_stars"], 9)  # 5 + 4（学生が書いた1は数えない）
+        self.assertEqual(response.context["average_rating"], 4.5)
+
+    def test_メモがない完了済みの依頼から学びの記録へ行ける(self):
+        response = self.client.get(reverse("student_gakuchika"))
+        self.assertContains(response, f'href="{reverse("student_review", args=[self.done_no_memo.pk])}"')
+
+    def test_他の学生の記録は出ない(self):
+        self.client.force_login(self.other)
+        response = self.client.get(reverse("student_gakuchika"))
+        self.assertEqual(response.context["done_count"], 0)
+        self.assertContains(response, "まだ完了した活動がありません")
+        self.assertNotContains(response, "買い物をお願いしたいです")
+
+
 class PageAccessTests(TestCase):
     """仮の画面も、ログインしていて役割が合う人だけが開ける"""
 
@@ -861,8 +944,6 @@ class PageAccessTests(TestCase):
         for name in self.STUDENT_PAGES:
             with self.subTest(name=name):
                 self.assertEqual(self.client.get(reverse(name)).status_code, 200)
-        self.assertEqual(
-            self.client.get(reverse("student_session_active", args=[1])).status_code, 200)
 
     def test_学生が高齢者の画面を開くと学生ホームへ(self):
         self.client.force_login(self.student)

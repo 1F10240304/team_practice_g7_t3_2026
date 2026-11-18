@@ -8,7 +8,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.db import IntegrityError, transaction
-from django.db.models import Exists, OuterRef, Subquery
+from django.db.models import Exists, F, OuterRef, Subquery
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -589,7 +589,23 @@ def student_request_detail(request, pk):
 # 学生側の活動中（トークテーマ表示）ページ
 @login_required
 def student_session_active(request, pk):
-    return _student_only(request) or render(request, 'student_session_active.html', {"pk": pk})
+    """活動中: 引き受けた依頼の内容と、お話しするトークテーマを見る"""
+    if response := _student_only(request):
+        return response
+
+    # 自分が引き受けた依頼だけ開ける（完了した依頼は一覧に戻す）
+    help_request = get_object_or_404(
+        HelpRequest, pk=pk, helper=request.user,
+        status__in=[HelpRequest.Status.ACCEPTED, HelpRequest.Status.DONE],
+    )
+    if help_request.status == HelpRequest.Status.DONE:
+        return redirect("student_accepted_requests")
+
+    return render(request, 'student_session_active.html', {
+        "help_request": help_request,
+        "requester_profile": SeniorProfile.objects.filter(user=help_request.requester).first(),
+        "talk_theme": _talk_theme_text(help_request),
+    })
 
 
 # 学生側の完了報告（学びの記録）ページ
@@ -621,7 +637,27 @@ def student_review(request, pk):
 # ガクチカ活動証明書ページ
 @login_required
 def student_gakuchika(request):
-    return _student_only(request) or render(request, 'student_gakuchika.html')
+    """活動証明書: 完了した依頼の数・もらった「ありがとう」・学びメモの記録"""
+    if response := _student_only(request):
+        return response
+
+    records = list(HelpRequest.objects.filter(
+        helper=request.user, status=HelpRequest.Status.DONE).order_by("-start_at"))
+    # 高齢者が送った評価（星）だけを数える
+    ratings = dict(Review.objects.filter(
+        help_request__in=records, reviewer=F("help_request__requester"),
+    ).values_list("help_request_id", "rating"))
+    for r in records:
+        rating = ratings.get(r.pk)
+        r.stars = "★" * rating + "☆" * (5 - rating) if rating else ""
+
+    average = round(sum(ratings.values()) / len(ratings), 1) if ratings else None
+    return render(request, 'student_gakuchika.html', {
+        "records": records,
+        "done_count": len(records),
+        "total_stars": sum(ratings.values()),
+        "average_rating": average,
+    })
 
 
 # 高齢者の履歴ページを表示する関数

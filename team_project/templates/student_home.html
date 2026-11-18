@@ -16,6 +16,7 @@
   <main class="home-content">
     <div class="home-top">
       <p class="greeting-text">{{ profile.name }}さん、こんにちは</p>
+      <a href="{% url 'student_accepted_requests' %}" class="page-link">引き受けた依頼</a>
       <a href="{% url 'student_mypage' %}" class="page-link">マイページ</a>
     </div>
 
