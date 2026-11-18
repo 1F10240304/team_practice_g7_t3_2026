@@ -29,6 +29,16 @@
             <div class="loader"></div>
             <h2 class="question-text">学生を探しています...</h2>
             <p class="instruction-text">このまま、しばらくお待ちください。<br>見つかると、この画面が切り替わります。</p>
+
+            <!-- 間違えて頼んだときなどに取り消す（学生が見つかる前だけ） -->
+            {% if help_request.status == "open" %}
+                <form method="post" action="{% url 'cancel_request' help_request.pk %}"
+                      onsubmit="return confirm('このお願いを取り消しますか？');">
+                    {% csrf_token %}
+                    <button type="submit" class="cancel-btn">このお願いを取り消す</button>
+                </form>
+            {% endif %}
+
             <a href="{% url 'my_requests' %}" class="back-link">お願いした一覧を見る</a>
             <a href="{% url 'elderly_home' %}" class="back-link">ホームに戻る</a>
         </div>

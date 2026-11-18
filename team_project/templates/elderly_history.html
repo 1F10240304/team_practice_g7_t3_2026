@@ -24,66 +24,57 @@
         
         <h2 class="text-2xl font-bold mb-6 text-gray-700 w-full text-left">これまでの記録</h2>
 
-        <!-- 履歴カード 1件目 -->
+        {% for r in done_requests %}
         <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-orange-100 w-full mb-6 relative">
             <!-- ステータスバッジ -->
             <div class="absolute top-4 right-4 bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
-                完了（6月1日）
+                完了（{{ r.start_at|date:"n月j日" }}）
             </div>
 
             <!-- 依頼内容 -->
             <div class="mb-4 pt-2">
                 <p class="text-sm font-bold text-gray-400 mb-1">お願いしたこと</p>
-                <p class="text-xl font-bold text-gray-800">電球の交換をお願いしたいです</p>
+                <p class="text-xl font-bold text-gray-800">{{ r.title }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ r.area }}</p>
             </div>
 
-            <!-- 来てくれた学生の情報 -->
+            <!-- 来てくれた学生の情報と、送った評価 -->
             <div class="bg-orange-50 rounded-2xl p-4 flex items-center justify-between mb-4 border border-orange-100">
                 <div class="flex items-center gap-3">
                     <div class="text-4xl">🧑‍🎓</div>
                     <div>
                         <p class="text-xs text-orange-500 font-bold mb-1">来てくれた学生</p>
-                        <p class="font-bold text-gray-800">東洋 太郎 さん</p>
+                        <p class="font-bold text-gray-800">{{ r.helper.studentprofile.name|default:"学生" }} さん</p>
+                        {% if r.helper.studentprofile.university %}
+                            <p class="text-xs text-gray-500">{{ r.helper.studentprofile.university }}</p>
+                        {% endif %}
                     </div>
                 </div>
-                <!-- 学生のマイページへ飛ぶボタン（仮のURLを入れています） -->
-                <a href="#" class="bg-white border border-orange-200 text-orange-500 hover:bg-orange-100 text-xs font-bold py-2 px-3 rounded-lg transition shadow-sm">
-                    プロフィールを見る
-                </a>
+                {% if r.my_rating %}
+                    <p class="text-yellow-500 text-lg font-bold" title="送った評価">
+                        {% for i in "12345" %}{% if forloop.counter <= r.my_rating %}★{% else %}<span class="text-gray-300">★</span>{% endif %}{% endfor %}
+                    </p>
+                {% elif r.helper %}
+                    <a href="{% url 'elderly_review' r.pk %}" class="bg-white border border-orange-200 text-orange-500 hover:bg-orange-100 text-xs font-bold py-2 px-3 rounded-lg transition shadow-sm">
+                        ありがとうを送る
+                    </a>
+                {% endif %}
             </div>
 
-            <!-- 最強機能：もう一度頼むボタン -->
-            <!-- 押すと、この内容を持ったまま依頼作成（または確認）画面へ飛ぶ想定 -->
-            <a href="{% url 'create_request' %}" class="w-full border-2 border-orange-500 text-orange-500 hover:bg-orange-50 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 block text-center">
+            <!-- 学生と話したトークテーマ -->
+            {% if r.talk_theme %}
+                <p class="text-sm text-gray-600 mb-4">💡 お話のきっかけ：{{ r.talk_theme.text }}</p>
+            {% endif %}
+
+            <!-- もう一度頼む: 前回の内容が入った確認画面を開く（話し直さなくてよい） -->
+            <a href="{% url 'request_again' r.pk %}" class="w-full border-2 border-orange-500 text-orange-500 hover:bg-orange-50 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 block text-center">
                 <span>🔄</span> 同じ内容でもう一度頼む
             </a>
         </div>
-
-        <!-- 履歴カード 2件目 -->
-        <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-orange-100 w-full mb-6 relative">
-            <div class="absolute top-4 right-4 bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
-                完了（5月15日）
-            </div>
-            <div class="mb-4 pt-2">
-                <p class="text-sm font-bold text-gray-400 mb-1">お願いしたこと</p>
-                <p class="text-xl font-bold text-gray-800">スーパーで重いお米を買ってきてほしい</p>
-            </div>
-            <div class="bg-orange-50 rounded-2xl p-4 flex items-center justify-between mb-4 border border-orange-100">
-                <div class="flex items-center gap-3">
-                    <div class="text-4xl">👩‍🎓</div>
-                    <div>
-                        <p class="text-xs text-orange-500 font-bold mb-1">来てくれた学生</p>
-                        <p class="font-bold text-gray-800">山田 花子 さん</p>
-                    </div>
-                </div>
-                <a href="#" class="bg-white border border-orange-200 text-orange-500 hover:bg-orange-100 text-xs font-bold py-2 px-3 rounded-lg transition shadow-sm">
-                    プロフィールを見る
-                </a>
-            </div>
-            <a href="{% url 'create_request' %}" class="w-full border-2 border-orange-500 text-orange-500 hover:bg-orange-50 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 block text-center">
-                <span>🔄</span> 同じ内容でもう一度頼む
-            </a>
-        </div>
+        {% empty %}
+            <p class="text-gray-500 text-lg w-full text-center my-8">まだ終わったお願いはありません。</p>
+            <a href="{% url 'create_request' %}" class="bg-orange-500 text-white font-bold py-3 px-8 rounded-full">お願いしてみる</a>
+        {% endfor %}
 
     </main>
 </body>

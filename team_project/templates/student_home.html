@@ -46,6 +46,7 @@
           <h3>{{ r.title }}</h3>
           <p class="request-meta">{{ r.area }}</p>
           <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+          <a href="{% url 'student_session_active' r.pk %}">活動を始める（トークテーマを見る）</a>
           <form method="post" action="{% url 'complete_request' r.pk %}">
             {% csrf_token %}
             <button type="submit">完了にする</button>
@@ -64,6 +65,7 @@
           {% if r.talk_theme %}
             <p class="request-meta">トークテーマ: {{ r.talk_theme.text }}</p>
           {% endif %}
+          <a href="{% url 'student_review' r.pk %}">{% if r.learning_memo %}学びメモを書き直す{% else %}学びを記録する{% endif %}</a>
         </div>
       {% empty %}
         <p class="empty-text">完了した依頼はまだありません。</p>

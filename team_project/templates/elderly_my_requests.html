@@ -20,6 +20,11 @@
     <main class="main-content">
         <h2 class="question-text">お願いした一覧</h2>
 
+        <!-- 取り消したときなどのお知らせ -->
+        {% for message in messages %}
+            <p class="my-request-message">{{ message }}</p>
+        {% endfor %}
+
         {% for r in help_requests %}
             <div class="my-request-card">
                 <p class="my-request-title">{{ r.title }}</p>
@@ -30,10 +35,15 @@
                 <!-- 状態ごとに色とことばを変える -->
                 {% if r.status == "open" %}
                     <p class="my-request-status status-open">🔍 学生を探しています</p>
+                    <a href="{% url 'elderly_request_status' r.pk %}" class="my-request-link">ようすを見る・取り消す</a>
                 {% elif r.status == "accepted" %}
                     <p class="my-request-status status-accepted">
                         🤝 {{ r.helper.studentprofile.name|default:"学生" }} さんが来てくれます
                     </p>
+                    <a href="{% url 'elderly_request_status' r.pk %}" class="my-request-link">ようすを見る</a>
+                {% elif r.status == "canceled" %}
+                    <p class="my-request-status status-canceled">✖ 取り消しました</p>
+                    <a href="{% url 'request_again' r.pk %}" class="my-request-link">🔄 同じ内容でもう一度頼む</a>
                 {% else %}
                     <p class="my-request-status status-done">✅ おわりました</p>
                     {% if r.talk_theme %}
@@ -41,7 +51,7 @@
                     {% endif %}
                 {% endif %}
                 {% if r.helper and r.status != "open" and not r.reviewed %}
-                    <a href="{% url 'elderly_review' r.pk %}" class="btn-submit">ありがとうを送る</a>
+                    <a href="{% url 'elderly_review' r.pk %}" class="my-request-thanks">ありがとうを送る</a>
                 {% endif %}
             </div>
         {% empty %}
