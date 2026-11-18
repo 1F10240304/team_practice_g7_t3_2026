@@ -476,7 +476,7 @@ class StudentAcceptedRequestsTests(TestCase):
         HelpRequest.objects.create(
             title="他の学生の依頼", area="東京都北区", start_at=start, end_at=end,
             status=HelpRequest.Status.ACCEPTED, helper=self.other)
-        self.url = reverse("student_accepted_requests")
+        self.url = reverse("student_home") + "?tab=accepted"
 
     def test_引き受けると自分がhelperとして記録される(self):
         self.client.force_login(self.student)
@@ -512,6 +512,34 @@ class StudentAcceptedRequestsTests(TestCase):
     def test_ログインしていないと開けない(self):
         self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?next={self.url}")
 
+    def test_前のURLは引き受けた依頼タブへ移る(self):
+        self.client.force_login(self.student)
+        self.assertRedirects(self.client.get(reverse("student_accepted_requests")), self.url)
+
+    def test_タブを指定しないと受付中の依頼が出る(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student_home"))
+        self.assertEqual(response.context["tab"], "open")
+        self.assertContains(response, "電球の交換")
+        self.assertNotContains(response, "買い物の付き添い")
+
+    def test_引き受けた依頼タブには受付中の依頼が出ない(self):
+        self.client.force_login(self.student)
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["tab"], "accepted")
+        self.assertNotContains(response, "電球の交換")
+
+    def test_知らないタブは受付中の依頼になる(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student_home"), {"tab": "xxx"})
+        self.assertEqual(response.context["tab"], "open")
+
+    def test_タブにこれからの依頼の件数が出る(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student_home"))
+        self.assertEqual(response.context["accepted_count"], 1)
+        self.assertContains(response, f'href="{self.url}"')
+
     def test_高齢者が開くと自分のホームに戻される(self):
         self.client.force_login(self.senior)
         response = self.client.get(self.url, follow=True)
@@ -538,7 +566,7 @@ class CompleteRequestTests(TestCase):
     def test_完了にすると状態が完了になり一覧に戻る(self):
         self.client.force_login(self.student)
         response = self.client.post(self.url)
-        self.assertRedirects(response, reverse("student_accepted_requests"))
+        self.assertRedirects(response, reverse("student_home") + "?tab=accepted")
         self.help_request.refresh_from_db()
         self.assertEqual(self.help_request.status, HelpRequest.Status.DONE)
 
@@ -547,7 +575,7 @@ class CompleteRequestTests(TestCase):
         self.client.post(self.url)
         theme = TalkTheme.objects.get(help_request=self.help_request)
         self.assertIn("明かり", theme.text)
-        self.assertContains(self.client.get(reverse("student_accepted_requests")), theme.text)
+        self.assertContains(self.client.get(reverse("student_home") + "?tab=accepted"), theme.text)
 
     def test_AIの関数があればその文章を使う(self):
         self.client.force_login(self.student)
@@ -1057,7 +1085,7 @@ class LiveUpdateTests(TestCase):
             (self.senior, reverse("my_requests"), "senior"),
             (self.student, reverse("student_home"), "open"),
             (self.student, reverse("request_list"), "open"),
-            (self.student, reverse("student_accepted_requests"), "student"),
+            (self.student, reverse("student_home") + "?tab=accepted", "student"),
         ]
         for user, url, kind in pages:
             with self.subTest(url=url):

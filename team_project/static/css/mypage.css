@@ -1,0 +1,152 @@
+/* マイページ（学生・高齢者で共通。色は style.css のオレンジに合わせています） */
+.mypage-content {
+    flex-grow: 1;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    box-sizing: border-box;
+    line-height: 1.6;
+}
+
+.mypage-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.mypage-title {
+    margin: 0;
+    font-size: 24px;
+}
+.mypage-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* 白いカード */
+.mypage-card {
+    margin-top: 20px;
+    padding: 24px 20px;
+    background-color: white;
+    border: 2px solid #fed7aa;
+    border-radius: 20px;
+}
+.mypage-card h3 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    color: #ea580c;
+}
+
+/* プロフィール */
+.profile-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px dashed #fed7aa;
+}
+.profile-avatar {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background-color: #ffedd5;
+    border-radius: 50%;
+}
+.profile-name {
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+.profile-sub {
+    margin: 2px 0 0;
+    color: #6b7280;
+}
+.profile-list {
+    margin: 16px 0 0;
+}
+.profile-list dt {
+    margin-top: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #9a3412;
+}
+.profile-list dd {
+    margin: 4px 0 0;
+    white-space: pre-wrap;
+}
+.profile-list dd.is-empty {
+    color: #9ca3af;
+}
+
+/* 編集フォーム（{{ form.as_p }} で出る項目） */
+.mypage-form p {
+    margin: 0 0 16px;
+}
+.mypage-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+.mypage-form input,
+.mypage-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 2px solid #fed7aa;
+    border-radius: 12px;
+    background-color: #fffbf5;
+}
+.mypage-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+.mypage-form input:focus,
+.mypage-form textarea:focus {
+    outline: none;
+    border-color: #f97316;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+
+.mypage-save {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: #f97316;
+    border: none;
+    border-radius: 35px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.mypage-save:hover {
+    background-color: #ea580c;
+}
+
+/* ログアウトは目立ちすぎないように */
+.mypage-logout-form {
+    margin-top: 28px;
+    text-align: center;
+}
+.mypage-logout {
+    padding: 10px 28px;
+    font-size: 16px;
+    color: #6b7280;
+    background-color: transparent;
+    border: 2px solid #d1d5db;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.mypage-logout:hover {
+    background-color: #f3f4f6;
+}
