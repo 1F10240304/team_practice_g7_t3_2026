@@ -52,7 +52,9 @@ def accept_request(request, pk):
     ).update(status=HelpRequest.Status.ACCEPTED, helper=request.user)
     if not accepted:
         messages.info(request, "この依頼はすでに引き受けられています。")
-    return redirect("student_home")
+        return redirect("student_home")
+    # 引き受けたら、引き受けた依頼の一覧ページを表示する
+    return redirect("student_accepted_requests")
 
 
 # AI が使えないときのトークテーマ（依頼の内容に合わせて選ぶ）
@@ -379,21 +381,24 @@ def elderly_status(request):
         "helper_profile": helper_profile,
     })
 
-        # 学生側の依頼詳細ページを表示する関数
-    def student_request_detail(request, pk):
-        # 本当はここでデータベースから pk（ID）に一致する依頼を探してきますが、
-        # まずは画面を表示するだけの処理を書きます
-        return render(request, 'student_request_detail.html')
+
+# 学生側の依頼詳細ページを表示する関数
+def student_request_detail(request, pk):
+    # 本当はここでデータベースから pk（ID）に一致する依頼を探してきますが、
+    # まずは画面を表示するだけの処理を書きます
+    return render(request, 'student_request_detail.html')
 
 
-    # 学生側の活動中（トークテーマ表示）ページ
-    def student_session_active(request, pk):
-        return render(request, 'student_session_active.html')
+# 学生側の活動中（トークテーマ表示）ページ
+def student_session_active(request, pk):
+    return render(request, 'student_session_active.html')
 
-    # 学生側の完了報告（学びの記録）ページ（※枠組みだけ先に作っておきます）
-    def student_review(request):
-        return render(request, 'student_review.html') # ファイルは後で作ります
 
-        # ガクチカ活動証明書ページ
-    def student_gakuchika(request):
-        return render(request, 'student_gakuchika.html')
+# 学生側の完了報告（学びの記録）ページ（※枠組みだけ先に作っておきます）
+def student_review(request):
+    return render(request, 'student_review.html')  # ファイルは後で作ります
+
+
+# ガクチカ活動証明書ページ
+def student_gakuchika(request):
+    return render(request, 'student_gakuchika.html')

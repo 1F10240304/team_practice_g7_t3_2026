@@ -266,9 +266,9 @@ class StudentHomeRequestTests(TestCase):
         self.assertContains(response, "電球の交換")
         self.assertNotContains(response, "買い物の付き添い")
 
-    def test_引き受けると学生ホームに戻る(self):
+    def test_引き受けると引き受けた依頼の一覧に移動する(self):
         response = self.client.post(reverse("accept_request", args=[self.setagaya.pk]))
-        self.assertRedirects(response, reverse("student_home"))
+        self.assertRedirects(response, reverse("student_accepted_requests"))
         self.setagaya.refresh_from_db()
         self.assertEqual(self.setagaya.status, HelpRequest.Status.ACCEPTED)
 

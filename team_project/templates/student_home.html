@@ -40,5 +40,10 @@
       <p class="empty-text">現在、募集中の依頼はありません。</p>
     {% endfor %}
   </main>
+
+  <script>
+    // 他のPCから出された新しい依頼が出るように、30秒ごとに読み込み直す
+    setTimeout(() => location.reload(), 30000);
+  </script>
 </body>
 </html>
