@@ -203,22 +203,6 @@ body {
     width: 100%;
 }
 
-/* くるくる回るローディングアニメーション */
-.loader {
-    border: 12px solid #ffedd5; /* 薄いオレンジ */
-    border-top: 12px solid #f97316; /* 濃いオレンジ */
-    border-radius: 50%;
-    width: 120px;
-    height: 120px;
-    animation: spin 1.5s linear infinite;
-    margin-bottom: 30px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 /* マッチング成功時の学生カード */
 .student-card {
     background-color: white;
@@ -499,4 +483,30 @@ a.btn-submit {
     border: 2px solid #fca5a5;
     border-radius: 30px;
     cursor: pointer;
+}
+
+/* 受付完了画面（くるくる回る待機の代わりに、受け付けたことを伝える） */
+.received-icon {
+    font-size: 80px;
+    margin-bottom: 10px;
+}
+.received-title {
+    color: #059669;
+    margin-bottom: 20px;
+}
+
+/* 高齢者ホームの「いまのお願い」 */
+.home-status {
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.home-status-heading {
+    align-self: flex-start;
+    font-size: 22px;
+    margin: 0 0 10px;
+    color: #374151;
 }

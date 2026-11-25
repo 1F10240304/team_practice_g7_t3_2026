@@ -318,7 +318,18 @@ def index(request):
 # 高齢者ホーム画面を表示する関数
 @login_required
 def elderly_home(request):
-    return _senior_only(request) or render(request, 'elderly_home.html')
+    """高齢者ホーム: メニューと、いま進んでいるお願いの状況を表示する"""
+    if response := _senior_only(request):
+        return response
+
+    active_requests = HelpRequest.objects.filter(
+        requester=request.user, status__in=_ACTIVE_STATUSES,
+    ).select_related("helper__studentprofile").order_by("start_at")
+    return render(request, 'elderly_home.html', {
+        "active_requests": active_requests,
+        # 学生が引き受けたら、ホームの表示も自動で切り替わる
+        "live": _live(request, "senior"),
+    })
 
 
 @login_required
@@ -463,7 +474,7 @@ def confirm_request(request):
 @require_POST
 @login_required
 def save_request(request):
-    """確認画面で「これでお願いする」を押したら依頼を保存して、待機画面へ"""
+    """確認画面で「これでお願いする」を押したら依頼を保存して、受付完了画面へ"""
     if response := _senior_only(request):
         return response
 
@@ -478,7 +489,17 @@ def save_request(request):
     help_request = form.save(commit=False)
     help_request.requester = request.user
     help_request.save()
-    return redirect("elderly_request_status", pk=help_request.pk)
+    return redirect("request_received", pk=help_request.pk)
+
+
+@login_required
+def request_received(request, pk):
+    """受付完了: お願いを受け付けたことを伝える（待たせずにホームへ戻ってもらう）"""
+    if response := _senior_only(request):
+        return response
+
+    help_request = get_object_or_404(HelpRequest, pk=pk, requester=request.user)
+    return render(request, "elderly_request_received.html", {"help_request": help_request})
 
 
 # まだ終わっていない（待っている・学生が来る予定の）依頼の状態

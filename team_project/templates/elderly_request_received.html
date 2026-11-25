@@ -1,0 +1,41 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>受け付けました | ここにいるよ</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <div class="status-container">
+            <div class="received-icon">✅</div>
+            <h2 class="question-text received-title">お願いを受け付けました</h2>
+
+            <!-- 出した依頼の内容 -->
+            <div class="status-request">
+                <p class="status-request-title">{{ help_request.title }}</p>
+                <p>{{ help_request.start_at|date:"n/j（D） H:i" }} 〜 {{ help_request.end_at|date:"H:i" }}　{{ help_request.area }}</p>
+            </div>
+
+            <p class="instruction-text">
+                この画面で待たなくて大丈夫です。<br>
+                来てくれる学生が決まったら、<br>ホームでお知らせします。
+            </p>
+
+            <a href="{% url 'elderly_home' %}" class="btn-submit">ホームに戻る</a>
+            <a href="{% url 'my_requests' %}" class="back-link">お願いした一覧を見る</a>
+        </div>
+    </main>
+
+</body>
+</html>

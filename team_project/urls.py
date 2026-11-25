@@ -27,6 +27,7 @@ urlpatterns = [
     path('create-request/', views.create_request, name='create_request'),
     path('create-request/confirm/', views.confirm_request, name='confirm_request'),
     path('create-request/save/', views.save_request, name='save_request'),
+    path('create-request/<int:pk>/received/', views.request_received, name='request_received'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
     path('elderly-status/<int:pk>/', views.elderly_request_status, name='elderly_request_status'),
     path('elderly-requests/<int:pk>/cancel/', views.cancel_request, name='cancel_request'),
