@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
+from .models import ChatMessage, HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
 from .views import _schedule_from_text
 
 User = get_user_model()
@@ -282,9 +282,9 @@ class StudentHomeRequestTests(TestCase):
         self.assertContains(self.client.get(reverse("request_list")), f'href="{detail_url}"')
         self.assertContains(self.client.get(detail_url), "電球の交換")
 
-    def test_引き受けると引き受けた依頼の一覧に移動する(self):
+    def test_引き受けるとチャット画面に移動する(self):
         response = self.client.post(reverse("accept_request", args=[self.setagaya.pk]))
-        self.assertRedirects(response, reverse("student_accepted_requests"))
+        self.assertRedirects(response, reverse("chat", args=[self.setagaya.pk]))
         self.setagaya.refresh_from_db()
         self.assertEqual(self.setagaya.status, HelpRequest.Status.ACCEPTED)
 
@@ -673,6 +673,7 @@ class ElderlyRequestFlowTests(TestCase):
         StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
         self.save_data = {
             "title": "電球の交換をお願いしたいです", "area": "東京都北区",
+            "address": "東京都北区赤羽台1-2-3 ひまわり荘101",
             "date": "2026-11-01", "start_time": "09:00", "end_time": "12:00",
             "text": "明日の午前中に電球を替えてほしい", "desired_time": "明日 午前中",
         }
@@ -743,6 +744,48 @@ class ElderlyRequestFlowTests(TestCase):
         response = self.client.get(reverse("elderly_status"), follow=True)
         self.assertContains(response, "山田太郎 さん")
         self.assertContains(response, "東洋大学")
+
+    # ---- 住所
+    def test_住所が保存される(self, _):
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        self.assertEqual(HelpRequest.objects.get().address, "東京都北区赤羽台1-2-3 ひまわり荘101")
+
+    def test_住所がないと保存しない(self, _):
+        self.client.force_login(self.senior)
+        response = self.client.post(reverse("save_request"), {**self.save_data, "address": " "})
+        self.assertContains(response, "住所を入れてください。")
+        self.assertFalse(HelpRequest.objects.exists())
+
+    def test_確認画面に前回の住所が入っている(self, _):
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        response = self.client.post(reverse("confirm_request"), {"text": "買い物に行ってほしい"})
+        self.assertContains(response, 'value="東京都北区赤羽台1-2-3 ひまわり荘101"')
+
+    def test_住所は募集中の一覧と詳細には出ない(self, _):
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        help_request = HelpRequest.objects.get()
+        self.client.force_login(self.student)
+        for url in [reverse("student_home"), reverse("request_list"),
+                    reverse("student_request_detail", args=[help_request.pk])]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, "電球の交換をお願いしたいです")
+                self.assertNotContains(response, "赤羽台1-2-3")
+
+    def test_引き受けると住所が見える(self, _):
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        help_request = HelpRequest.objects.get()
+        self.client.force_login(self.student)
+        self.client.post(reverse("accept_request", args=[help_request.pk]))
+        self.assertContains(self.client.get(reverse("student_home") + "?tab=accepted"),
+                            "東京都北区赤羽台1-2-3 ひまわり荘101")
+        response = self.client.get(reverse("student_session_active", args=[help_request.pk]))
+        self.assertContains(response, "東京都北区赤羽台1-2-3 ひまわり荘101")
+        self.assertContains(response, "地図で見る")
 
     def test_待っている依頼がなければ待機画面からホームへ(self, _):
         self.client.force_login(self.senior)
@@ -1253,7 +1296,7 @@ class ElderlyRequestManageTests(TestCase):
     def test_もう一度頼んで保存すると新しい依頼になる(self):
         done = self._create(status=HelpRequest.Status.DONE, helper=self.student)
         self.client.post(reverse("save_request"), {
-            "title": done.title, "area": done.area,
+            "title": done.title, "area": done.area, "address": "東京都北区赤羽台1-2-3",
             "date": "2026-12-10", "start_time": "14:00", "end_time": "16:00",
         })
         self.assertEqual(HelpRequest.objects.filter(title=done.title).count(), 2)
@@ -1351,3 +1394,106 @@ class LiveUpdateTests(TestCase):
                 self.assertContains(response, 'id="live-update"')
                 self.assertContains(response, reverse("live_version", args=[kind]))
                 self.assertContains(response, "js/live_update.js")
+
+
+class ChatTests(TestCase):
+    """チャット: 依頼した高齢者と、引き受けた学生の2人だけが使える"""
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤花子", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        self.other = User.objects.create_user(username="other", password="pass")
+        StudentProfile.objects.create(user=self.other, name="鈴木", university="他大学")
+        start = timezone.now()
+        self.help_request = HelpRequest.objects.create(
+            title="電球の交換をお願いしたいです", area="東京都北区", requester=self.senior,
+            start_at=start, end_at=start + timedelta(hours=2))
+        self.url = reverse("chat", args=[self.help_request.pk])
+        self.messages_url = reverse("chat_messages", args=[self.help_request.pk])
+
+    def _accept(self):
+        self.client.force_login(self.student)
+        return self.client.post(reverse("accept_request", args=[self.help_request.pk]))
+
+    def test_引き受けるとチャット画面が出る(self):
+        response = self._accept()
+        self.assertRedirects(response, self.url)
+        response = self.client.get(self.url)
+        self.assertContains(response, "佐藤花子さんとのチャット")
+        self.assertContains(response, "電球の交換をお願いしたいです")
+
+    def test_学生と高齢者でメッセージをやりとりできる(self):
+        self._accept()
+        self.assertRedirects(self.client.post(self.url, {"text": "山田です。よろしくお願いします"}),
+                             self.url)
+        self.client.force_login(self.senior)
+        response = self.client.get(self.url)
+        self.assertContains(response, "山田太郎さんとのチャット")
+        self.assertContains(response, "山田です。よろしくお願いします")
+        self.client.post(self.url, {"text": "お待ちしています"})
+        self.assertEqual(
+            list(ChatMessage.objects.values_list("sender__username", "text")),
+            [("student", "山田です。よろしくお願いします"), ("senior", "お待ちしています")])
+
+    def test_新しいメッセージだけを取ってこれる(self):
+        self._accept()
+        first = ChatMessage.objects.create(help_request=self.help_request, sender=self.student, text="1通目")
+        ChatMessage.objects.create(help_request=self.help_request, sender=self.senior, text="2通目")
+        data = self.client.get(self.messages_url, {"after": first.pk}).json()
+        self.assertEqual([m["text"] for m in data["messages"]], ["2通目"])
+        self.assertEqual(data["messages"][0]["name"], "佐藤花子")
+        self.assertFalse(data["messages"][0]["mine"])
+        self.assertTrue(data["can_send"])
+
+    def test_メッセージの文章はHTMLとして動かない(self):
+        self._accept()
+        self.client.post(self.url, {"text": "<script>alert(1)</script>"})
+        response = self.client.get(self.url)
+        self.assertNotContains(response, "<script>alert(1)</script>")
+        self.assertContains(response, "&lt;script&gt;alert(1)&lt;/script&gt;")
+
+    def test_空のメッセージは送れない(self):
+        self._accept()
+        response = self.client.post(self.url, {"text": "  "})
+        self.assertContains(response, "メッセージを入れてください。")
+        self.assertFalse(ChatMessage.objects.exists())
+
+    def test_引き受ける前は開けない(self):
+        self.client.force_login(self.senior)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.assertEqual(self.client.get(self.messages_url).status_code, 404)
+
+    def test_ほかの学生は開けない(self):
+        self._accept()
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.assertEqual(self.client.get(self.messages_url).status_code, 404)
+        self.assertEqual(self.client.post(self.url, {"text": "のぞき"}).status_code, 404)
+        self.assertFalse(ChatMessage.objects.exists())
+
+    def test_ログインしていないと開けない(self):
+        self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?next={self.url}")
+
+    def test_完了したら読むだけになる(self):
+        self._accept()
+        self.client.post(self.url, {"text": "着きました"})
+        HelpRequest.objects.update(status=HelpRequest.Status.DONE)
+        response = self.client.get(self.url)
+        self.assertContains(response, "着きました")
+        self.assertContains(response, "メッセージは読むだけです")
+        self.client.post(self.url, {"text": "もう一通"})
+        self.assertEqual(ChatMessage.objects.count(), 1)
+        self.assertFalse(self.client.get(self.messages_url).json()["can_send"])
+
+    def test_高齢者の待機画面と学生の画面からチャットへ行ける(self):
+        self._accept()
+        self.assertContains(self.client.get(reverse("student_home") + "?tab=accepted"),
+                            f'href="{self.url}"')
+        self.assertContains(
+            self.client.get(reverse("student_session_active", args=[self.help_request.pk])),
+            f'href="{self.url}"')
+        self.client.force_login(self.senior)
+        response = self.client.get(reverse("elderly_request_status", args=[self.help_request.pk]))
+        self.assertContains(response, f'href="{self.url}"')

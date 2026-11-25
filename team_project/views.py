@@ -18,7 +18,7 @@ from django.views.decorators.http import require_POST
 from .forms import (HelpRequestForm, LearningMemoForm, ReviewForm, SeniorProfileForm, SeniorSignupForm,
                     StudentProfileForm, StudentSignupForm)
 from . import ai
-from .models import HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
+from .models import ChatMessage, HelpRequest, Review, SeniorProfile, StudentProfile, TalkTheme
 
 
 def _open_requests(area):
@@ -104,8 +104,8 @@ def accept_request(request, pk):
     if not accepted:
         messages.info(request, "この依頼はすでに引き受けられています。")
         return redirect("student_home")
-    # 引き受けたら、引き受けた依頼の一覧ページを表示する
-    return redirect("student_accepted_requests")
+    # 引き受けたら、依頼した高齢者とのチャット画面を表示する
+    return redirect("chat", pk=pk)
 
 
 # AI が使えないときのトークテーマ（依頼の内容に合わせて選ぶ）
@@ -450,6 +450,7 @@ def confirm_request(request):
     form = HelpRequestForm(initial={
         "title": data["title"],
         "area": data["location"] or profile.area,
+        "address": _last_address(request.user),
         "date": day,
         "start_time": start_time,
         "end_time": end_time,
@@ -460,6 +461,13 @@ def confirm_request(request):
         "desired_time": data["desired_time"],
         "missing_labels": missing_labels,
     })
+
+
+def _last_address(user):
+    """前の依頼で入れた住所（毎回入れなくてよいように、確認画面に最初から入れておく）"""
+    last = HelpRequest.objects.filter(requester=user).exclude(address="").order_by(
+        "-created_at").first()
+    return last.address if last else ""
 
 
 @require_POST
@@ -556,6 +564,7 @@ def request_again(request, pk):
     form = HelpRequestForm(initial={
         "title": old.title,
         "area": old.area,
+        "address": old.address or _last_address(request.user),
         "date": timezone.localdate() + timedelta(days=1),
         "start_time": timezone.localtime(old.start_at).time(),
         "end_time": timezone.localtime(old.end_at).time(),
@@ -690,3 +699,102 @@ def elderly_history(request):
             help_request=OuterRef("pk"), reviewer=request.user).values("rating")[:1]),
     ).order_by("-start_at")
     return render(request, "elderly_history.html", {"done_requests": done_requests})
+
+
+# ===== チャット（依頼した高齢者と、引き受けた学生の2人だけ） =====
+# 学生が引き受けると開けるようになる。完了したあとは読むだけ（書き込めない）。
+# 新しいメッセージは、画面のJS（static/js/chat.js）が数秒ごとに chat_messages から取ってくる。
+
+_CHAT_STATUSES = [HelpRequest.Status.ACCEPTED, HelpRequest.Status.DONE]
+
+
+def _chat_request(request, pk):
+    """チャットを開ける依頼を返す（2人以外・まだ引き受けられていない依頼は 404）"""
+    help_request = get_object_or_404(HelpRequest, pk=pk, status__in=_CHAT_STATUSES)
+    if request.user not in (help_request.requester, help_request.helper):
+        raise Http404
+    return help_request
+
+
+def _chat_names(help_request):
+    """チャットに出す名前（ユーザーのID → 名前）"""
+    senior = SeniorProfile.objects.filter(user=help_request.requester).first()
+    student = StudentProfile.objects.filter(user=help_request.helper).first()
+    return {
+        help_request.requester_id: senior.name if senior else "依頼した方",
+        help_request.helper_id: student.name if student else "学生",
+    }
+
+
+def _chat_message_data(message, user, names):
+    """1件のメッセージを、画面のJSに渡す形にする"""
+    sent_at = timezone.localtime(message.created_at)
+    return {
+        "id": message.pk,
+        "text": message.text,
+        "mine": message.sender_id == user.pk,
+        "name": names.get(message.sender_id, ""),
+        "time": f"{sent_at.month}/{sent_at.day} {sent_at:%H:%M}",
+    }
+
+
+@login_required
+def chat(request, pk):
+    """チャット画面: メッセージを読む・送る"""
+    help_request = _chat_request(request, pk)
+    can_send = help_request.status == HelpRequest.Status.ACCEPTED
+    is_student = request.user == help_request.helper
+
+    error = ""
+    if request.method == "POST":
+        text = request.POST.get("text", "").strip()
+        if not can_send:
+            error = "この依頼は完了したので、メッセージは送れません。"
+        elif not text:
+            error = "メッセージを入れてください。"
+        elif len(text) > 500:
+            error = "メッセージは500文字までにしてください。"
+        else:
+            ChatMessage.objects.create(help_request=help_request, sender=request.user, text=text)
+            # 送ったあとは読み込み直しても二重に送られないように、同じ画面へ移る
+            return redirect("chat", pk=pk)
+
+    names = _chat_names(help_request)
+    chat_messages = [_chat_message_data(m, request.user, names)
+                     for m in help_request.chat_messages.all()]
+    if is_student:
+        partner_name = names[help_request.requester_id]
+        back_url = (reverse("student_session_active", args=[pk]) if can_send
+                    else _student_accepted_url())
+    else:
+        partner_name = names[help_request.helper_id]
+        back_url = (reverse("elderly_request_status", args=[pk]) if can_send
+                    else reverse("my_requests"))
+
+    return render(request, "chat.html", {
+        "help_request": help_request,
+        "chat_messages": chat_messages,
+        "last_id": chat_messages[-1]["id"] if chat_messages else 0,
+        "partner_name": partner_name,
+        "is_student": is_student,
+        "can_send": can_send,
+        "back_url": back_url,
+        "error": error,
+        "draft": request.POST.get("text", "") if error else "",
+    })
+
+
+@login_required
+def chat_messages(request, pk):
+    """自動更新用: after より新しいメッセージだけを返す"""
+    help_request = _chat_request(request, pk)
+    try:
+        after = int(request.GET.get("after", 0))
+    except ValueError:
+        after = 0
+    names = _chat_names(help_request)
+    new_messages = help_request.chat_messages.filter(pk__gt=after)
+    return JsonResponse({
+        "messages": [_chat_message_data(m, request.user, names) for m in new_messages],
+        "can_send": help_request.status == HelpRequest.Status.ACCEPTED,
+    })

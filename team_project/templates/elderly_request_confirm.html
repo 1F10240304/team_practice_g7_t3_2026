@@ -130,6 +130,18 @@
                         <div class="text-red-500 text-xs mt-1">{{ form.area.errors }}</div>
                     </div>
 
+                    <!-- 🏠 住所（引き受けた学生にだけ見せる） -->
+                    <div>
+                        <label for="{{ form.address.id_for_label }}" class="block text-sm font-bold text-orange-500 mb-1">
+                            🏠 {{ form.address.label }}
+                        </label>
+                        <p class="text-xs text-gray-400 mb-2">{{ form.address.help_text }}</p>
+                        <div class="text-lg text-gray-700 bg-gray-50 border-2 border-gray-200 rounded-xl p-3 w-full focus-within:border-orange-400 focus-within:bg-white transition">
+                            {{ form.address }}
+                        </div>
+                        <div class="text-red-500 text-xs mt-1">{{ form.address.errors }}</div>
+                    </div>
+
                 </div>
             </div>
 

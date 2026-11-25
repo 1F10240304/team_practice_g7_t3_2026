@@ -62,6 +62,8 @@
 
             <!-- 作業が終わった後の「ありがとう送信（レビュー）」ページへ繋ぐボタン -->
             {% if help_request.helper %}
+                <!-- 引き受けた学生とのチャット -->
+                <a href="{% url 'chat' help_request.pk %}" class="btn-submit">💬 学生さんとお話しする（チャット）</a>
                 <a href="{% url 'elderly_review' help_request.pk %}" class="btn-submit">作業が終わったら押す</a>
             {% else %}
                 <!-- デモ表示のときは本当の学生がいないので、評価には進めない -->
