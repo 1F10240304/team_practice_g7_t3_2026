@@ -16,6 +16,7 @@
   <main class="home-content">
     <div class="home-top">
       <p class="greeting-text">{{ profile.name }}さん、こんにちは</p>
+      <a href="{% url 'student_accepted_requests' %}" class="page-link">引き受けた依頼</a>
       <a href="{% url 'student_mypage' %}" class="page-link">マイページ</a>
     </div>
 
@@ -31,6 +32,7 @@
         <h3>{{ r.title }}</h3>
         <p class="request-meta">{{ r.area }}</p>
         <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+        <a href="{% url 'student_request_detail' r.pk %}">詳しく見る</a>
         <form method="post" action="{% url 'accept_request' r.pk %}">
           {% csrf_token %}
           <button type="submit">引き受ける</button>
@@ -40,10 +42,6 @@
       <p class="empty-text">現在、募集中の依頼はありません。</p>
     {% endfor %}
   </main>
-
-  <script>
-    // 他のPCから出された新しい依頼が出るように、30秒ごとに読み込み直す
-    setTimeout(() => location.reload(), 30000);
-  </script>
+    {% include "_live_update.html" %}
 </body>
 </html>

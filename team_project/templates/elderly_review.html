@@ -17,88 +17,111 @@
 
     <!-- メインコンテンツ -->
     <main class="main-content">
-        
-        <!-- 【状態1】評価入力画面 -->
-        <div id="review-section" class="status-container">
-            <h2 class="question-text" style="margin-bottom: 10px;">おつかれさまでした！</h2>
-            <p class="instruction-text">来てくれた学生に<br>「ありがとう」の評価を送りましょう。</p>
-            
-            <div class="review-card">
-                <div class="student-avatar" style="font-size: 60px; margin-bottom: 10px;">🧑‍🎓</div>
-                <div style="font-size: 20px; font-weight: bold; color: #374151;">東洋 太郎 さん</div>
-                
-                <!-- 星マーク（5段階評価） -->
-                <div class="star-rating" id="star-container">
-                    <span class="star" data-value="1">★</span>
-                    <span class="star" data-value="2">★</span>
-                    <span class="star" data-value="3">★</span>
-                    <span class="star" data-value="4">★</span>
-                    <span class="star" data-value="5">★</span>
-                </div>
-                
-                <!-- 選んだ星の数を保存する隠し箱（あとでデータベースに送る用） -->
-                <input type="hidden" id="rating-value" value="0">
-                
-                <!-- デモ用に少し色を変えた送信ボタン -->
-                <a href="#" id="send-review-btn" class="btn-submit" style="display: inline-block; background-color: #f97316;">
-                    評価を送る
+
+        <!-- どの依頼の評価か -->
+        <div class="status-request">
+            <p class="status-request-title">{{ help_request.title }}</p>
+            <p>{{ help_request.start_at|date:"n/j（D）" }}　{{ help_request.area }}</p>
+        </div>
+
+        {% if review %}
+            <!-- 【送信済み】評価を送ったあと -->
+            <div id="thank-you-section" class="status-container thank-you-msg">
+                <div style="font-size: 80px; margin-bottom: 20px;">🌸</div>
+                <h2 class="question-text" style="color: #ea580c; margin-bottom: 20px;">送信しました！</h2>
+                <p class="instruction-text">学生の活動の励みになります。<br>ご利用ありがとうございました。</p>
+                {% if help_request.talk_theme %}
+                    <p class="instruction-text">💡 お話のきっかけ：{{ help_request.talk_theme.text }}</p>
+                {% endif %}
+
+                <a href="{% url 'elderly_home' %}" class="btn-submit" style="display: inline-block; margin-top: 20px;">
+                    ホームに戻る
                 </a>
             </div>
-        </div>
+        {% else %}
+            <!-- 【評価入力】星を選んで送る -->
+            <div id="review-section" class="status-container">
+                <h2 class="question-text" style="margin-bottom: 10px;">おつかれさまでした！</h2>
+                <p class="instruction-text">来てくれた学生に<br>「ありがとう」の評価を送りましょう。</p>
 
-        <!-- 【状態2】送信完了メッセージ（最初は非表示） -->
-        <div id="thank-you-section" class="status-container thank-you-msg hidden">
-            <div style="font-size: 80px; margin-bottom: 20px;">🌸</div>
-            <h2 class="question-text" style="color: #ea580c; margin-bottom: 20px;">送信しました！</h2>
-            <p class="instruction-text">学生の活動の励みになります。<br>ご利用ありがとうございました。</p>
-            
-            <a href="{% url 'elderly_home' %}" class="btn-submit" style="display: inline-block; margin-top: 20px;">
-                ホームに戻る
-            </a>
-        </div>
+                <form method="post" action="{% url 'elderly_review' help_request.pk %}" class="review-card">
+                    {% csrf_token %}
+                    <div class="student-avatar" style="font-size: 60px; margin-bottom: 10px;">🧑‍🎓</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #374151;">
+                        {{ helper_profile.name|default:"学生" }} さん
+                    </div>
+                    {% if helper_profile.university %}
+                        <div style="color: #6b7280;">{{ helper_profile.university }}</div>
+                    {% endif %}
 
+                    <!-- 星マーク（5段階評価） -->
+                    <div class="star-rating" id="star-container">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                    <!-- 選んだ星の数（name="rating" でサーバーへ送る） -->
+                    {{ form.rating }}
+                    {% if form.rating.errors %}
+                        <p id="rating-error" class="error-text" style="color: #dc2626;">{{ form.rating.errors.0 }}</p>
+                    {% else %}
+                        <p id="rating-error" class="error-text hidden" style="color: #dc2626;">星をタップして評価を選んでください。</p>
+                    {% endif %}
+
+                    <!-- ひとこと（書かなくてもよい） -->
+                    <label for="{{ form.comment.id_for_label }}" class="request-label">ひとこと（書かなくても大丈夫です）</label>
+                    <textarea id="{{ form.comment.id_for_label }}" name="{{ form.comment.html_name }}"
+                              class="request-text" rows="3">{{ form.comment.value|default:"" }}</textarea>
+
+                    <button type="submit" id="send-review-btn" class="btn-submit" style="display: inline-block; background-color: #f97316;">
+                        評価を送る
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+
+        <a href="{% url 'my_requests' %}" class="back-link">お願いした一覧を見る</a>
     </main>
 
-    <!-- 星を光らせる＆送信アニメーションのJavaScript -->
+    {% if not review %}
+    <!-- 星を光らせるJavaScript -->
     <script>
         const stars = document.querySelectorAll('.star');
-        const ratingInput = document.getElementById('rating-value');
-        const sendBtn = document.getElementById('send-review-btn');
-        const reviewSection = document.getElementById('review-section');
-        const thankYouSection = document.getElementById('thank-you-section');
+        const ratingInput = document.getElementById('{{ form.rating.id_for_label }}');
+        const ratingError = document.getElementById('rating-error');
+        const reviewForm = document.querySelector('#review-section form');
+
+        // 星を光らせる（value 以下の星を黄色にする）
+        function showStars(value) {
+            stars.forEach(s => {
+                s.classList.toggle('selected', parseInt(s.dataset.value) <= value);
+            });
+        }
 
         // ① 星をタップした時の処理
         stars.forEach(star => {
             star.addEventListener('click', function() {
-                // タップした星の数字（1〜5）を取得
-                const value = parseInt(this.getAttribute('data-value'));
-                ratingInput.value = value;
-                
-                // タップした星より左側の星をすべて黄色にする
-                stars.forEach(s => {
-                    if (parseInt(s.getAttribute('data-value')) <= value) {
-                        s.classList.add('selected');
-                    } else {
-                        s.classList.remove('selected');
-                    }
-                });
+                ratingInput.value = this.dataset.value;
+                showStars(parseInt(this.dataset.value));
+                ratingError.classList.add('hidden');
             });
         });
 
-        // ② 「評価を送る」ボタンを押した時の処理
-        sendBtn.addEventListener('click', function(e) {
-            e.preventDefault(); // そのまま別のページに飛ぶのを防ぐ
-            
-            // 星が1つも選ばれていない場合は注意する
-            if (ratingInput.value === "0") {
-                alert("星をタップして評価を選んでください。");
-                return;
+        // エラーで戻ってきたときは、選んでいた星を光らせ直す
+        if (ratingInput.value) {
+            showStars(parseInt(ratingInput.value));
+        }
+
+        // ② 星が選ばれていないときは送らずに知らせる
+        reviewForm.addEventListener('submit', function(e) {
+            if (!ratingInput.value) {
+                e.preventDefault();
+                ratingError.classList.remove('hidden');
             }
-            
-            // 評価画面を隠して、送信完了メッセージを出す
-            reviewSection.classList.add('hidden');
-            thankYouSection.classList.remove('hidden');
         });
     </script>
+    {% endif %}
 </body>
 </html>

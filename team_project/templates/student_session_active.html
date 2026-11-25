@@ -30,8 +30,8 @@
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-blue-100 w-full mb-6 flex items-center gap-4">
             <div class="text-4xl">👵</div>
             <div>
-                <p class="text-sm text-gray-500 font-bold">世田谷区のおばあちゃん</p>
-                <p class="text-lg font-bold text-gray-800">電球の交換</p>
+                <p class="text-sm text-gray-500 font-bold">{% if requester_profile %}{{ requester_profile.name }}さん{% else %}依頼者{% endif %}（{{ help_request.area }}）</p>
+                <p class="text-lg font-bold text-gray-800">{{ help_request.title }}</p>
             </div>
         </div>
 
@@ -47,26 +47,16 @@
                 作業が終わったら、お茶を飲みながら<br>こんなお話を聞いてみませんか？
             </p>
 
-            <!-- トークテーマのリスト（AIが生成する想定） -->
             <ul class="space-y-3">
-                <li class="bg-orange-50 hover:bg-orange-100 transition p-4 rounded-xl border border-orange-100 text-orange-800 font-medium flex items-start gap-3">
+                <li class="bg-orange-50 p-4 rounded-xl border border-orange-100 text-orange-800 font-medium flex items-start gap-3">
                     <span class="text-xl">📻</span>
-                    <span>昔の商店街の思い出について</span>
-                </li>
-                <li class="bg-orange-50 hover:bg-orange-100 transition p-4 rounded-xl border border-orange-100 text-orange-800 font-medium flex items-start gap-3">
-                    <span class="text-xl">🍳</span>
-                    <span>暮らしの知恵や、料理の工夫について</span>
-                </li>
-                <li class="bg-orange-50 hover:bg-orange-100 transition p-4 rounded-xl border border-orange-100 text-orange-800 font-medium flex items-start gap-3">
-                    <span class="text-xl">🏫</span>
-                    <span>学生時代の思い出を聞いてみよう</span>
+                    <span>{{ talk_theme }}</span>
                 </li>
             </ul>
         </div>
 
         <!-- 完了報告ボタン（次の画面へ） -->
-        <!-- ※一旦、まだ作っていない student_review.html 用のリンクを仮置きしておきます -->
-        <a href="{% url 'student_review' %}" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-full text-lg shadow-lg transition-transform transform hover:scale-105 flex justify-center items-center gap-2">
+        <a href="{% url 'student_review' help_request.pk %}" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-full text-lg shadow-lg transition-transform transform hover:scale-105 flex justify-center items-center gap-2">
             ✅ 作業完了・学びを記録する
         </a>
 

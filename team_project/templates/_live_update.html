@@ -1,0 +1,6 @@
+{% load static %}
+{# 自動更新の部品: </body> の直前で {% include "_live_update.html" %} と書くだけで使える #}
+{% if live %}
+<div id="live-update" data-url="{{ live.url }}" data-version="{{ live.version }}" hidden></div>
+<script src="{% static 'js/live_update.js' %}"></script>
+{% endif %}

@@ -28,8 +28,8 @@
             <div class="flex items-center gap-4 border-b border-gray-100 pb-4 mb-4">
                 <div class="text-5xl">👵</div>
                 <div>
-                    <p class="text-lg font-bold text-gray-800">世田谷区のおばあちゃん</p>
-                    <p class="text-blue-500 font-medium text-sm">📍 大学から徒歩8分 (約600m)</p>
+                    <p class="text-lg font-bold text-gray-800">{% if requester_profile %}{{ requester_profile.name }}さん{% else %}依頼者{% endif %}</p>
+                    <p class="text-blue-500 font-medium text-sm">📍 {{ help_request.area }}</p>
                 </div>
             </div>
 
@@ -37,18 +37,18 @@
             <div class="space-y-5">
                 <div>
                     <h4 class="text-sm font-bold text-gray-400 mb-1">お願いしたいこと</h4>
-                    <p class="text-2xl font-bold text-gray-800">電球の交換をお願いしたいです</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ help_request.title }}</p>
                 </div>
                 
                 <div>
                     <h4 class="text-sm font-bold text-gray-400 mb-1">希望日時</h4>
-                    <p class="text-lg font-medium text-gray-700">🗓️ 6月1日(日) 午前中</p>
+                    <p class="text-lg font-medium text-gray-700">🗓️ {{ help_request.start_at|date:"n月j日（D） H:i" }} 〜 {{ help_request.end_at|date:"H:i" }}</p>
                 </div>
 
                 <!-- 互酬性（トークテーマ）のアピール -->
                 <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 mt-6">
                     <p class="text-orange-600 font-bold text-sm mb-2">💡 作業後のトークテーマ候補</p>
-                    <p class="text-orange-800 font-medium">「昔の商店街の思い出について」</p>
+                    <p class="text-orange-800 font-medium">「{{ talk_theme }}」</p>
                     <p class="text-orange-400 text-xs mt-1">※作業完了後に、少しだけお話を伺ってみましょう！</p>
                 </div>
             </div>
@@ -56,9 +56,10 @@
 
         <!-- 
             引き受けるボタン（フォーム）
-            バックエンドチームが作った "accept_request"（引き受け処理）へデータを送ります
+            この依頼のIDで "accept_request"（引き受け処理）へデータを送ります。募集中のときだけ表示します
         -->
-        <form action="{% url 'accept_request' pk=1 %}" method="POST" class="w-full">
+        {% if can_accept %}
+        <form action="{% url 'accept_request' pk=help_request.pk %}" method="POST" class="w-full">
             <!-- Django特有のセキュリティ対策の呪文 -->
             {% csrf_token %}
             
@@ -66,6 +67,9 @@
                 <span>🤝</span> この依頼を引き受ける
             </button>
         </form>
+        {% else %}
+        <p class="w-full text-center text-gray-500 font-bold py-4">この依頼はすでに引き受けられています</p>
+        {% endif %}
 
         <!-- 戻るリンク -->
         <div class="mt-8">

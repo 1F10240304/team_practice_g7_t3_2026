@@ -6,6 +6,8 @@ urlpatterns = [
     path("requests/", views.request_list, name="request_list"),
     path("requests/<int:pk>/accept/", views.accept_request, name="accept_request"),
     path("requests/<int:pk>/complete/", views.complete_request, name="complete_request"),
+    # 自動更新（画面のJSが数秒ごとに確認する）
+    path("live/<str:kind>/", views.live_version, name="live_version"),
     # 新規登録
     path("signup/", views.select_role, name="select_role"),
     path("signup/student/", views.student_signup, name="student_signup"),
@@ -26,15 +28,19 @@ urlpatterns = [
     path('create-request/confirm/', views.confirm_request, name='confirm_request'),
     path('create-request/save/', views.save_request, name='save_request'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
-    path('elderly-review/', views.elderly_review, name='elderly_review'),
+    path('elderly-status/<int:pk>/', views.elderly_request_status, name='elderly_request_status'),
+    path('elderly-requests/<int:pk>/cancel/', views.cancel_request, name='cancel_request'),
+    path('elderly-requests/<int:pk>/again/', views.request_again, name='request_again'),
+    path('elderly-requests/', views.my_requests, name='my_requests'), 
+    path('elderly-review/<int:pk>/', views.elderly_review, name='elderly_review'),
     # requests/ の下あたりに追加してください
     path("requests/<int:pk>/detail/", views.student_request_detail, name="student_request_detail"),
     # requests/ の下あたりに追加してください
     path("requests/<int:pk>/active/", views.student_session_active, name="student_session_active"),
-    path("student-review/", views.student_review, name="student_review"),
+    path("requests/<int:pk>/report/", views.student_review, name="student_review"),
     # 学生マイページの下あたりに追加
     path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
-    # 学生マイページの下あたりに追加
-    path("mypage/student/gakuchika/", views.student_gakuchika, name="student_gakuchika"),
+    # 高齢者ホームの下あたりに追加
+    path('elderly-history/', views.elderly_history, name='elderly_history'),
 ]
 
