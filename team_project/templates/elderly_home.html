@@ -24,9 +24,16 @@
     <main class="main-content">
         <!-- ユーザーへの声かけ -->
         <div>
-            <p class="greeting-text">こんにちは！</p>
+            <p class="greeting-text">{{ profile.name }}さん、こんにちは！</p>
             <h2 class="question-text">今日はどうしますか？</h2>
         </div>
+
+        <!-- 待っているお願いがあるときだけ知らせる -->
+        {% if active_count %}
+            <a href="{% url 'elderly_status' %}" class="home-active-notice">
+                🔔 待っているお願いが {{ active_count }} 件あります（見る）
+            </a>
+        {% endif %}
 
         <!-- ① 手伝ってほしいボタン -->
         <a href="{% url 'create_request' %}" class="btn-menu btn-help">
@@ -42,8 +49,11 @@
             <p style="color: #10b981; margin: 0;">過去の依頼や、来てくれた学生を確認</p>
         </a>
    
-        <!-- 戻るリンク -->
-        <a href="{% url 'select_role' %}" class="back-link">役割選択に戻る</a>
+        <!-- ログアウト（Djangoのログアウトは POST で送る） -->
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="back-link home-logout">ログアウト</button>
+        </form>
     </main>
 
 </body>

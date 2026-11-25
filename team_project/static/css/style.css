@@ -500,3 +500,30 @@ a.btn-submit {
     border-radius: 30px;
     cursor: pointer;
 }
+
+
+/* 高齢者ホーム: 待っているお願いのお知らせ */
+.home-active-notice {
+    display: block;
+    width: 100%;
+    max-width: 450px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    padding: 14px 20px;
+    background-color: #fffbeb;
+    border: 3px solid #fbbf24;
+    border-radius: 16px;
+    color: #92400e;
+    font-size: 19px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+}
+
+/* 高齢者ホーム: ログアウト（リンクと同じ見た目のボタン） */
+.home-logout {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}

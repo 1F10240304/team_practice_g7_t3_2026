@@ -33,7 +33,11 @@
                 </p>
 
                 <!-- 状態ごとに色とことばを変える -->
-                {% if r.status == "open" %}
+                {% if r.is_expired %}
+                    <!-- 募集中のまま時間が過ぎた -->
+                    <p class="my-request-status status-canceled">😢 来られる学生が見つかりませんでした</p>
+                    <a href="{% url 'request_again' r.pk %}" class="my-request-link">🔄 日にちを変えてもう一度頼む</a>
+                {% elif r.status == "open" %}
                     <p class="my-request-status status-open">🔍 学生を探しています</p>
                     <a href="{% url 'elderly_request_status' r.pk %}" class="my-request-link">ようすを見る・取り消す</a>
                 {% elif r.status == "accepted" %}
