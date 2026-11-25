@@ -76,3 +76,64 @@
 .empty-text {
     color: #6b7280;
 }
+
+/* 「受付中の依頼」「引き受けた依頼」のタブ */
+.home-tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 6px;
+    background-color: #ffedd5;
+    border-radius: 16px;
+}
+.home-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 8px;
+    border-radius: 12px;
+    color: #9a3412;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+.home-tab:hover {
+    background-color: #fed7aa;
+}
+.home-tab.is-active {
+    background-color: white;
+    color: #ea580c;
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.2);
+}
+.home-tab-label {
+    font-size: 17px;
+    font-weight: bold;
+}
+.home-tab-sub {
+    font-size: 13px;
+    color: #c2410c;
+}
+.home-tab-badge {
+    display: inline-block;
+    padding: 0 8px;
+    border-radius: 999px;
+    background-color: #f97316;
+    color: white;
+    font-weight: bold;
+}
+
+/* 「この依頼はすでに引き受けられています」などのお知らせ */
+.home-message {
+    margin: 16px 0 0;
+    padding: 10px 14px;
+    background-color: #fef3c7;
+    border-radius: 10px;
+    color: #92400e;
+}
+
+/* 完了した依頼は少し控えめに */
+.request-card.is-done {
+    background-color: #fffbf5;
+    border-color: #e5e7eb;
+}

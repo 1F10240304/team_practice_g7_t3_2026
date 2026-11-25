@@ -4,35 +4,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>学生マイページ</title>
-  <link rel="stylesheet" href="{% static 'css/student_mypage.css' %}">
+  <title>マイページ | ここにいるよ</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/mypage.css' %}">
 </head>
 <body>
-  <nav class="nav"><a href="{% url 'student_home' %}">ホームへ</a> <a href="{% url 'student_gakuchika' %}">活動証明書（ガクチカ）</a></nav>
-  <h1>学生マイページ</h1>
+  <header class="header">
+    <h1 class="header-title">ここにいるよ</h1>
+  </header>
 
-  <section>
-    <h2>プロフィール</h2>
-    <dl>
-      <dt>名前</dt><dd>{{ profile.name }}</dd>
-      <dt>大学・学年</dt><dd>{{ profile.university }}</dd>
-      <dt>自己紹介</dt><dd>{{ profile.introduction|default:"未入力" }}</dd>
-      <dt>できること</dt><dd>{{ profile.skills|default:"未入力" }}</dd>
-    </dl>
-  </section>
+  <main class="mypage-content">
+    <div class="mypage-top">
+      <h2 class="mypage-title">マイページ</h2>
+      <nav class="mypage-nav">
+        <a href="{% url 'student_home' %}" class="page-link">ホームへ</a>
+        <a href="{% url 'student_gakuchika' %}" class="page-link">活動証明書（ガクチカ）</a>
+      </nav>
+    </div>
 
-  <section>
-    <h2>プロフィールを編集</h2>
-    <form method="post">
+    <section class="mypage-card">
+      <div class="profile-head">
+        <div class="profile-avatar">🎓</div>
+        <div>
+          <p class="profile-name">{{ profile.name }} さん</p>
+          <p class="profile-sub">{{ profile.university }}</p>
+        </div>
+      </div>
+      <dl class="profile-list">
+        <dt>自己紹介</dt>
+        <dd{% if not profile.introduction %} class="is-empty"{% endif %}>{{ profile.introduction|default:"未入力" }}</dd>
+        <dt>できること</dt>
+        <dd{% if not profile.skills %} class="is-empty"{% endif %}>{{ profile.skills|default:"未入力" }}</dd>
+      </dl>
+    </section>
+
+    <section class="mypage-card">
+      <h3>プロフィールを編集</h3>
+      <form method="post" class="mypage-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="mypage-save">保存する</button>
+      </form>
+    </section>
+
+    <form method="post" action="{% url 'logout' %}" class="mypage-logout-form">
       {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit">保存する</button>
+      <button type="submit" class="mypage-logout">ログアウト</button>
     </form>
-  </section>
-
-  <form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit">ログアウト</button>
-  </form>
+  </main>
 </body>
 </html>

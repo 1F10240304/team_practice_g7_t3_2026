@@ -1,9 +1,32 @@
-/* 高齢者向けに文字とボタンを大きめにしています */
-body { font-family: sans-serif; font-size: 22px; max-width: 720px; margin: 0 auto; padding: 16px; line-height: 1.8; }
-section { border: 2px solid #888; border-radius: 12px; padding: 20px; margin-bottom: 32px; }
-dt { font-weight: bold; margin-top: 12px; }
-dd { margin: 0 0 12px; white-space: pre-wrap; }
-form p { margin: 16px 0; }
-input, textarea { width: 100%; box-sizing: border-box; padding: 12px; font-size: 22px; }
-button { padding: 16px 40px; font-size: 22px; }
-nav.nav { margin-bottom: 8px; }
+/* 高齢者のマイページ: mypage.css の上から、文字とボタンを大きくする */
+.mypage-content {
+    font-size: 20px;
+    line-height: 1.8;
+}
+.mypage-title {
+    font-size: 28px;
+}
+.mypage-card h3 {
+    font-size: 24px;
+}
+.page-link {
+    font-size: 18px;
+}
+.profile-name {
+    font-size: 28px;
+}
+.profile-list dt {
+    font-size: 18px;
+}
+.mypage-form input,
+.mypage-form textarea {
+    padding: 12px;
+    font-size: 20px;
+}
+.mypage-save {
+    padding: 16px;
+    font-size: 22px;
+}
+.mypage-logout {
+    font-size: 18px;
+}

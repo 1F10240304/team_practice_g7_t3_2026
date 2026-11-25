@@ -149,7 +149,7 @@ def complete_request(request, pk):
         HelpRequest, pk=pk, helper=request.user, status=HelpRequest.Status.ACCEPTED
     )
     _finish_request(help_request)
-    return redirect("student_accepted_requests")
+    return redirect(_student_accepted_url())
 
 
 def _finish_request(help_request):
@@ -231,37 +231,50 @@ def home(request):
 
 @login_required
 def student_home(request):
-    """学生ホーム: 募集中の依頼を探して引き受ける"""
+    """学生ホーム: タブで「受付中の依頼」と「引き受けた依頼」を切り替える
+
+    ?tab=open（省略時）… 募集中の依頼を探して引き受ける
+    ?tab=accepted     … 自分が引き受けた依頼（これからの依頼と完了した依頼）
+    """
     profile = StudentProfile.objects.filter(user=request.user).first()
     if profile is None:
         # 役割が違うページを開いたときは、自分のホームへ戻す
         return redirect("home")
 
-    area = request.GET.get("area", "")
-    return render(request, "student_home.html", {
+    tab = "accepted" if request.GET.get("tab") == "accepted" else "open"
+    my_requests = HelpRequest.objects.filter(helper=request.user).select_related(
+        "talk_theme").order_by("start_at")
+    accepted_requests = my_requests.filter(status=HelpRequest.Status.ACCEPTED)
+    context = {
         "profile": profile,
-        "help_requests": _open_requests(area),
-        "area": area,
-        "live": _live(request, "open", area),
-    })
+        "tab": tab,
+        # タブのバッジに出す「これからの依頼」の件数
+        "accepted_count": accepted_requests.count(),
+    }
+    if tab == "accepted":
+        context.update({
+            "accepted_requests": accepted_requests,
+            "done_requests": my_requests.filter(status=HelpRequest.Status.DONE),
+            "live": _live(request, "student"),
+        })
+    else:
+        area = request.GET.get("area", "")
+        context.update({
+            "help_requests": _open_requests(area),
+            "area": area,
+            "live": _live(request, "open", area),
+        })
+    return render(request, "student_home.html", context)
+
+
+def _student_accepted_url():
+    return reverse("student_home") + "?tab=accepted"
 
 
 @login_required
 def student_accepted_requests(request):
-    """学生が引き受けた依頼の一覧（引き受け済みと完了に分けて表示）"""
-    profile = StudentProfile.objects.filter(user=request.user).first()
-    if profile is None:
-        # 役割が違うページを開いたときは、自分のホームへ戻す
-        return redirect("home")
-
-    my_requests = HelpRequest.objects.filter(helper=request.user).select_related(
-        "talk_theme").order_by("start_at")
-    return render(request, "student_accepted_requests.html", {
-        "profile": profile,
-        "accepted_requests": my_requests.filter(status=HelpRequest.Status.ACCEPTED),
-        "done_requests": my_requests.filter(status=HelpRequest.Status.DONE),
-        "live": _live(request, "student"),
-    })
+    """前のURL（/home/student/accepted/）は、学生ホームの「引き受けた依頼」タブへ移す"""
+    return redirect(_student_accepted_url())
 
 
 @login_required
@@ -601,7 +614,7 @@ def student_session_active(request, pk):
         status__in=[HelpRequest.Status.ACCEPTED, HelpRequest.Status.DONE],
     )
     if help_request.status == HelpRequest.Status.DONE:
-        return redirect("student_accepted_requests")
+        return redirect(_student_accepted_url())
 
     return render(request, 'student_session_active.html', {
         "help_request": help_request,

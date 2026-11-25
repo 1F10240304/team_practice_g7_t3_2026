@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ホーム | ここにいるよ</title>
+  <title>{% if tab == "accepted" %}引き受けた依頼{% else %}ホーム{% endif %} | ここにいるよ</title>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="{% static 'css/student_home.css' %}">
 </head>
@@ -16,31 +16,83 @@
   <main class="home-content">
     <div class="home-top">
       <p class="greeting-text">{{ profile.name }}さん、こんにちは</p>
-      <a href="{% url 'student_accepted_requests' %}" class="page-link">引き受けた依頼</a>
       <a href="{% url 'student_mypage' %}" class="page-link">マイページ</a>
     </div>
 
-    <h2 class="home-title">近くの依頼</h2>
+    {# タブ: URL の ?tab= で切り替える #}
+    <nav class="home-tabs" aria-label="表示する依頼">
+      <a href="{% url 'student_home' %}" class="home-tab{% if tab == 'open' %} is-active{% endif %}"
+         {% if tab == 'open' %}aria-current="page"{% endif %}>
+        <span class="home-tab-label">受付中の依頼</span>
+        <span class="home-tab-sub">探す</span>
+      </a>
+      <a href="{% url 'student_home' %}?tab=accepted" class="home-tab{% if tab == 'accepted' %} is-active{% endif %}"
+         {% if tab == 'accepted' %}aria-current="page"{% endif %}>
+        <span class="home-tab-label">引き受けた依頼</span>
+        <span class="home-tab-sub">予定 <span class="home-tab-badge">{{ accepted_count }}件</span></span>
+      </a>
+    </nav>
 
-    <form method="get" class="search-form">
-      <input type="text" name="area" value="{{ area }}" placeholder="地域で絞り込み（例: 世田谷区）">
-      <button type="submit">絞り込む</button>
-    </form>
+    {% if messages %}
+      {% for message in messages %}
+        <p class="home-message">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
 
-    {% for r in help_requests %}
-      <div class="request-card">
-        <h3>{{ r.title }}</h3>
-        <p class="request-meta">{{ r.area }}</p>
-        <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
-        <a href="{% url 'student_request_detail' r.pk %}">詳しく見る</a>
-        <form method="post" action="{% url 'accept_request' r.pk %}">
-          {% csrf_token %}
-          <button type="submit">引き受ける</button>
-        </form>
-      </div>
-    {% empty %}
-      <p class="empty-text">現在、募集中の依頼はありません。</p>
-    {% endfor %}
+    {% if tab == "accepted" %}
+      <h2 class="home-title">これからの依頼</h2>
+      {% for r in accepted_requests %}
+        <div class="request-card">
+          <h3>{{ r.title }}</h3>
+          <p class="request-meta">{{ r.area }}</p>
+          <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+          <a href="{% url 'student_session_active' r.pk %}">活動を始める（トークテーマを見る）</a>
+          <form method="post" action="{% url 'complete_request' r.pk %}">
+            {% csrf_token %}
+            <button type="submit">完了にする</button>
+          </form>
+        </div>
+      {% empty %}
+        <p class="empty-text">引き受けている依頼はありません。<a href="{% url 'student_home' %}">受付中の依頼</a>から探してみましょう。</p>
+      {% endfor %}
+
+      <h2 class="home-title">完了した依頼</h2>
+      {% for r in done_requests %}
+        <div class="request-card is-done">
+          <h3>{{ r.title }}</h3>
+          <p class="request-meta">{{ r.area }}</p>
+          <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+          {% if r.talk_theme %}
+            <p class="request-meta">トークテーマ: {{ r.talk_theme.text }}</p>
+          {% endif %}
+          <a href="{% url 'student_review' r.pk %}">{% if r.learning_memo %}学びメモを書き直す{% else %}学びを記録する{% endif %}</a>
+        </div>
+      {% empty %}
+        <p class="empty-text">完了した依頼はまだありません。</p>
+      {% endfor %}
+    {% else %}
+      <h2 class="home-title">近くの依頼</h2>
+
+      <form method="get" class="search-form">
+        <input type="text" name="area" value="{{ area }}" placeholder="地域で絞り込み（例: 世田谷区）">
+        <button type="submit">絞り込む</button>
+      </form>
+
+      {% for r in help_requests %}
+        <div class="request-card">
+          <h3>{{ r.title }}</h3>
+          <p class="request-meta">{{ r.area }}</p>
+          <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+          <a href="{% url 'student_request_detail' r.pk %}">詳しく見る</a>
+          <form method="post" action="{% url 'accept_request' r.pk %}">
+            {% csrf_token %}
+            <button type="submit">引き受ける</button>
+          </form>
+        </div>
+      {% empty %}
+        <p class="empty-text">現在、募集中の依頼はありません。</p>
+      {% endfor %}
+    {% endif %}
   </main>
     {% include "_live_update.html" %}
 </body>

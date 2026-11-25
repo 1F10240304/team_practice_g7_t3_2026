@@ -4,17 +4,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>新規登録（手伝ってほしい方）</title>
+  <title>新規登録（手伝ってほしい方） | ここにいるよ</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="{% static 'css/accounts.css' %}">
 </head>
 <body>
-  <h1>新規登録（手伝ってほしい方）</h1>
-  <form method="post">
-    {% csrf_token %}
-    {{ user_form.as_p }}
-    {{ profile_form.as_p }}
-    <button type="submit">登録する</button>
-  </form>
-  <p><a href="{% url 'select_role' %}">戻る</a> ／ 登録済みの方は <a href="{% url 'login' %}">ログイン</a></p>
+  <header class="header">
+    <h1 class="header-title">ここにいるよ</h1>
+  </header>
+
+  <main class="auth-content">
+    <div class="auth-card">
+      <div class="auth-icon">🙋</div>
+      <h2 class="auth-title">新規登録（手伝ってほしい方）</h2>
+      <form method="post" class="auth-form">
+        {% csrf_token %}
+        {{ user_form.as_p }}
+        {{ profile_form.as_p }}
+        <button type="submit" class="auth-submit">登録する</button>
+      </form>
+      <p class="auth-links"><a href="{% url 'select_role' %}">戻る</a> ／ 登録済みの方は <a href="{% url 'login' %}">ログイン</a></p>
+    </div>
+  </main>
 </body>
 </html>
