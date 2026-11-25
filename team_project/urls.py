@@ -6,6 +6,9 @@ urlpatterns = [
     path("requests/", views.request_list, name="request_list"),
     path("requests/<int:pk>/accept/", views.accept_request, name="accept_request"),
     path("requests/<int:pk>/complete/", views.complete_request, name="complete_request"),
+    # チャット（依頼した高齢者と、引き受けた学生の2人だけ）
+    path("requests/<int:pk>/chat/", views.chat, name="chat"),
+    path("requests/<int:pk>/chat/messages/", views.chat_messages, name="chat_messages"),
     # 自動更新（画面のJSが数秒ごとに確認する）
     path("live/<str:kind>/", views.live_version, name="live_version"),
     # 新規登録
@@ -27,6 +30,7 @@ urlpatterns = [
     path('create-request/', views.create_request, name='create_request'),
     path('create-request/confirm/', views.confirm_request, name='confirm_request'),
     path('create-request/save/', views.save_request, name='save_request'),
+    path('create-request/<int:pk>/received/', views.request_received, name='request_received'),
     path('elderly-status/', views.elderly_status, name='elderly_status'),
     path('elderly-status/<int:pk>/', views.elderly_request_status, name='elderly_request_status'),
     path('elderly-requests/<int:pk>/cancel/', views.cancel_request, name='cancel_request'),

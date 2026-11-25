@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import HelpRequest, Review, SeniorProfile, StudentProfile
+from .models import ChatMessage, HelpRequest, Review, SeniorProfile, StudentProfile
 
 
 @admin.register(HelpRequest)
@@ -29,3 +29,8 @@ class SeniorProfileAdmin(admin.ModelAdmin):
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ["help_request", "reviewer", "rating", "created_at"]
     list_filter = ["rating"]
+
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ["help_request", "sender", "text", "created_at"]

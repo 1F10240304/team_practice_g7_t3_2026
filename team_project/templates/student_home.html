@@ -44,8 +44,9 @@
       {% for r in accepted_requests %}
         <div class="request-card">
           <h3>{{ r.title }}</h3>
-          <p class="request-meta">{{ r.area }}</p>
+          <p class="request-meta">{% if r.address %}🏠 {{ r.address }}{% else %}{{ r.area }}{% endif %}</p>
           <p class="request-meta">{{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}</p>
+          <a href="{% url 'chat' r.pk %}">💬 チャットする</a>
           <a href="{% url 'student_session_active' r.pk %}">活動を始める（トークテーマを見る）</a>
           <form method="post" action="{% url 'complete_request' r.pk %}">
             {% csrf_token %}

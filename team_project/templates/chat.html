@@ -1,0 +1,77 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チャット | ここにいるよ</title>
+    <!-- Tailwind CSS を読み込む -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="{% if is_student %}bg-blue-50{% else %}bg-orange-50{% endif %} text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="header relative">
+        <a href="{{ back_url }}" class="absolute left-6 top-5 text-gray-400 hover:text-orange-500 text-2xl font-bold transition">
+            ←
+        </a>
+        <h1 class="header-title">ここにいるよ</h1>
+    </header>
+
+    <main class="flex-grow flex flex-col p-4 w-full max-w-md mx-auto">
+
+        <!-- だれと、何の依頼で話しているか -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-orange-100 mb-4 flex items-center gap-3">
+            <div class="text-4xl">{% if is_student %}👵{% else %}🧑‍🎓{% endif %}</div>
+            <div class="min-w-0">
+                <p class="text-lg font-bold text-gray-800">{{ partner_name }}さんとのチャット</p>
+                <p class="text-sm text-gray-500 truncate">{{ help_request.title }}</p>
+                <p class="text-sm text-gray-500">🗓️ {{ help_request.start_at|date:"n月j日（D） H:i" }} 〜 {{ help_request.end_at|date:"H:i" }}</p>
+            </div>
+        </div>
+
+        <!-- メッセージの一覧（新しいメッセージは chat.js が下に足していく） -->
+        <div id="chat-log" class="flex-grow space-y-3 mb-4"
+             data-url="{% url 'chat_messages' help_request.pk %}" data-last-id="{{ last_id }}">
+            <p id="chat-empty" class="text-center text-gray-400 py-8{% if chat_messages %} hidden{% endif %}">
+                まだメッセージはありません。<br>{% if is_student %}あいさつを送ってみましょう。{% else %}学生さんにひとこと送ってみましょう。{% endif %}
+            </p>
+            {% for m in chat_messages %}
+                <div class="flex flex-col {% if m.mine %}items-end{% else %}items-start{% endif %}">
+                    <p class="text-xs text-gray-400 mb-1">{% if m.mine %}自分{% else %}{{ m.name }}さん{% endif %}　{{ m.time }}</p>
+                    <p class="max-w-[85%] px-4 py-3 rounded-2xl text-lg whitespace-pre-wrap break-words shadow-sm {% if m.mine %}bg-orange-500 text-white{% else %}bg-white text-gray-800 border border-gray-200{% endif %}">{{ m.text }}</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if can_send %}
+            <!-- メッセージを送る -->
+            <form method="post" action="{% url 'chat' help_request.pk %}" class="sticky bottom-0 bg-white rounded-2xl p-3 shadow-md border border-orange-100">
+                {% csrf_token %}
+                {% if error %}
+                    <p class="text-red-500 text-sm font-bold mb-2">{{ error }}</p>
+                {% endif %}
+                <label for="chat-text" class="sr-only">メッセージ</label>
+                <textarea id="chat-text" name="text" rows="2" maxlength="500" required
+                          class="w-full text-lg border-2 border-gray-200 rounded-xl p-3 focus:border-orange-400 focus:outline-none"
+                          placeholder="メッセージを入れる">{{ draft }}</textarea>
+                <button type="submit" class="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-full text-lg shadow transition">
+                    送る
+                </button>
+            </form>
+        {% else %}
+            <p class="text-center text-gray-500 bg-white rounded-2xl p-4 border border-gray-200">
+                この依頼は完了しました。メッセージは読むだけです。
+            </p>
+        {% endif %}
+
+        <a href="{{ back_url }}" class="text-center text-gray-400 hover:text-orange-500 underline font-medium transition mt-4 mb-4">
+            {% if is_student %}活動の画面に戻る{% else %}お願いの画面に戻る{% endif %}
+        </a>
+    </main>
+
+    <script src="{% static 'js/chat.js' %}"></script>
+</body>
+</html>

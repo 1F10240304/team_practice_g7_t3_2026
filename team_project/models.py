@@ -13,6 +13,9 @@ class HelpRequest(models.Model):
 
     title = models.CharField("依頼内容", max_length=100)   # 例: 電球の交換をお願いしたいです
     area = models.CharField("地域", max_length=50)          # 例: 東京都世田谷区
+    # くわしい住所。引き受けた学生にだけ見せる（募集中の一覧には出さない）
+    # 前からある依頼には住所がないので、データベース上は空でもよいことにする
+    address = models.CharField("住所", max_length=200, blank=True)  # 例: 東京都世田谷区〇〇1-2-3
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     start_at = models.DateTimeField("希望開始")
@@ -114,3 +117,27 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.help_request.title}（★{self.rating}）"
+
+
+class ChatMessage(models.Model):
+    """依頼ごとのチャット（依頼した高齢者と、引き受けた学生の2人だけが使う）"""
+    help_request = models.ForeignKey(
+        HelpRequest,
+        verbose_name="依頼",
+        on_delete=models.CASCADE,
+        related_name="chat_messages",
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="送った人",
+        on_delete=models.CASCADE,
+        related_name="chat_messages",
+    )
+    text = models.TextField("メッセージ", max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "pk"]
+
+    def __str__(self):
+        return self.text[:20]

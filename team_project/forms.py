@@ -40,9 +40,17 @@ class HelpRequestForm(forms.ModelForm):
     end_time = forms.TimeField(label="何時まで", widget=forms.TimeInput(
         attrs={"type": "time"}, format="%H:%M"))
 
+    # 新しく依頼するときは、住所を必ず入れてもらう
+    address = forms.CharField(
+        label="住所", max_length=200,
+        help_text="引き受けた学生さんにだけ表示されます",
+        widget=forms.TextInput(attrs={"placeholder": "例: 東京都北区赤羽台1-2-3 ○○マンション101"}),
+        error_messages={"required": "住所を入れてください。"},
+    )
+
     class Meta:
         model = HelpRequest
-        fields = ["title", "area"]
+        fields = ["title", "area", "address"]
         labels = {"title": "お願いすること", "area": "場所"}
 
     def clean(self):

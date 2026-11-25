@@ -35,7 +35,9 @@ SECRET_KEY = 'django-insecure-l-etxw8_m*ngtx5vu411o0hliwwj4xv#t8ptii56c+tan(m2b7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# 開発中は、同じネットワークの他のPCから IPアドレスでアクセスできるようにする
+# （サーバー役のPCで python manage.py runserver 0.0.0.0:8000 を実行する）
+ALLOWED_HOSTS = ["*"] if DEBUG else []
 
 if DEBUG:
     # Cloudflare Quick Tunnel でメンバーと共有するため（開発時のみ）
