@@ -26,9 +26,9 @@
 
         <!-- 【状態1】待機中の表示（まだだれも引き受けていないとき） -->
         <div id="waiting-state" class="status-container{% if helper_profile %} hidden{% endif %}">
-            <div class="loader"></div>
-            <h2 class="question-text">学生を探しています...</h2>
-            <p class="instruction-text">このまま、しばらくお待ちください。<br>見つかると、この画面が切り替わります。</p>
+            <div class="received-icon">🔍</div>
+            <h2 class="question-text">学生を探しています</h2>
+            <p class="instruction-text">お願いは受け付けています。この画面で待たなくて大丈夫です。<br>学生が決まったら、ホームでお知らせします。</p>
 
             <!-- 間違えて頼んだときなどに取り消す（学生が見つかる前だけ） -->
             {% if help_request.status == "open" %}

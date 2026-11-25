@@ -713,15 +713,35 @@ class ElderlyRequestFlowTests(TestCase):
         self.assertContains(response, "お願いしたいことを話すか、書いてください。")
         self.assertTemplateUsed(response, "elderly_request_create.html")
 
-    def test_これでお願いすると保存されて待機画面へ(self, _):
+    def test_これでお願いすると保存されて受付完了画面へ(self, _):
         self.client.force_login(self.senior)
         response = self.client.post(reverse("save_request"), self.save_data)
         help_request = HelpRequest.objects.get()
-        self.assertRedirects(response, reverse("elderly_request_status", args=[help_request.pk]))
+        self.assertRedirects(response, reverse("request_received", args=[help_request.pk]))
+        self.assertContains(self.client.get(response.url), "お願いを受け付けました")
         self.assertEqual(help_request.requester, self.senior)
         self.assertEqual(help_request.status, HelpRequest.Status.OPEN)
         self.assertEqual(timezone.localtime(help_request.start_at).hour, 9)
         self.assertContains(self.client.get(reverse("elderly_status"), follow=True), "学生を探しています")
+
+    def test_ホームに待っているお願いの状況が出る(self, _):
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        response = self.client.get(reverse("elderly_home"))
+        self.assertContains(response, "電球の交換をお願いしたいです")
+        self.assertContains(response, "学生を探しています")
+        self.assertContains(response, 'id="live-update"')
+        HelpRequest.objects.update(status=HelpRequest.Status.ACCEPTED, helper=self.student)
+        self.assertContains(self.client.get(reverse("elderly_home")), "山田太郎 さんが来てくれます")
+
+    def test_ほかの人の受付完了画面は開けない(self, _):
+        other = User.objects.create_user(username="other_senior", password="pass")
+        SeniorProfile.objects.create(user=other, name="鈴木花子", area="東京都北区")
+        self.client.force_login(self.senior)
+        self.client.post(reverse("save_request"), self.save_data)
+        self.client.force_login(other)
+        pk = HelpRequest.objects.get().pk
+        self.assertEqual(self.client.get(reverse("request_received", args=[pk])).status_code, 404)
 
     def test_終わりの時間が始まりより前だと保存しない(self, _):
         self.client.force_login(self.senior)

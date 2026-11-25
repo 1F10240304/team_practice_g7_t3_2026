@@ -10,6 +10,7 @@
     
     <!-- さっき作った style.css を読み込む -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/elderly_my_requests.css' %}">
 </head>
 <body>
 
@@ -27,6 +28,31 @@
             <p class="greeting-text">こんにちは！</p>
             <h2 class="question-text">今日はどうしますか？</h2>
         </div>
+
+        <!-- いま進んでいるお願いの状況（学生が引き受けると自動で切り替わる） -->
+        {% if active_requests %}
+            <section class="home-status">
+                <h3 class="home-status-heading">いまのお願い</h3>
+                {% for r in active_requests %}
+                    <div class="my-request-card">
+                        <p class="my-request-title">{{ r.title }}</p>
+                        <p class="my-request-meta">
+                            {{ r.start_at|date:"n/j（D） H:i" }} 〜 {{ r.end_at|date:"H:i" }}　{{ r.area }}
+                        </p>
+                        {% if r.status == "open" %}
+                            <p class="my-request-status status-open">🔍 学生を探しています</p>
+                            <a href="{% url 'elderly_request_status' r.pk %}" class="my-request-link">ようすを見る・取り消す</a>
+                        {% else %}
+                            <p class="my-request-status status-accepted">
+                                🤝 {{ r.helper.studentprofile.name|default:"学生" }} さんが来てくれます
+                            </p>
+                            <a href="{% url 'elderly_request_status' r.pk %}" class="my-request-link">ようすを見る</a>
+                            <a href="{% url 'elderly_review' r.pk %}" class="my-request-thanks">終わったらありがとうを送る</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </section>
+        {% endif %}
 
         <!-- ① 手伝ってほしいボタン -->
         <a href="{% url 'create_request' %}" class="btn-menu btn-help">
@@ -46,5 +72,6 @@
         <a href="{% url 'select_role' %}" class="back-link">役割選択に戻る</a>
     </main>
 
+    {% include "_live_update.html" %}
 </body>
 </html>
