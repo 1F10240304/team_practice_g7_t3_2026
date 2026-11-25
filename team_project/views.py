@@ -8,7 +8,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.db import IntegrityError, transaction
-from django.db.models import Exists, F, OuterRef, Subquery
+from django.db.models import Exists, F, OuterRef, Q, Subquery
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -24,7 +24,7 @@ from .models import ChatMessage, HelpRequest, Review, SeniorProfile, StudentProf
 def _open_requests(area):
     """募集中の依頼（地域が指定されていれば絞り込む）"""
     help_requests = HelpRequest.objects.filter(
-        status=HelpRequest.Status.OPEN
+        status=HelpRequest.Status.OPEN, end_at__gt=timezone.now(),  # 時間が過ぎたものは出さない
     ).order_by("start_at")
     if area:
         help_requests = help_requests.filter(area__icontains=area)
@@ -96,13 +96,16 @@ def accept_request(request, pk):
         # 学生以外は引き受けられないので、自分のホームへ戻す
         return redirect("home")
 
-    get_object_or_404(HelpRequest, pk=pk)
-    # 募集中のときだけ更新する。2人が同時に押しても、引き受けられるのは1人だけ
+    help_request = get_object_or_404(HelpRequest, pk=pk)
+    # 募集中で時間が過ぎていないときだけ更新する。2人が同時に押しても、引き受けられるのは1人だけ
     accepted = HelpRequest.objects.filter(
-        pk=pk, status=HelpRequest.Status.OPEN
+        pk=pk, status=HelpRequest.Status.OPEN, end_at__gt=timezone.now(),
     ).update(status=HelpRequest.Status.ACCEPTED, helper=request.user)
     if not accepted:
-        messages.info(request, "この依頼はすでに引き受けられています。")
+        if help_request.is_expired:
+            messages.info(request, "この依頼は希望の時間が過ぎています。")
+        else:
+            messages.info(request, "この依頼はすでに引き受けられています。")
         return redirect("student_home")
     # 引き受けたら、依頼した高齢者とのチャット画面を表示する
     return redirect("chat", pk=pk)
@@ -320,14 +323,15 @@ def index(request):
 # 高齢者ホーム画面を表示する関数
 @login_required
 def elderly_home(request):
-    """高齢者ホーム: メニューと、いま進んでいるお願いの状況を表示する"""
+    """高齢者ホーム: 名前で声をかけ、いま進んでいるお願いの状況を表示する"""
     if response := _senior_only(request):
         return response
 
-    active_requests = HelpRequest.objects.filter(
-        requester=request.user, status__in=_ACTIVE_STATUSES,
-    ).select_related("helper__studentprofile").order_by("start_at")
+    # 時間が過ぎて見つからなかった依頼は、ホームではなく一覧で知らせる
+    active_requests = _active_requests(request.user).select_related(
+        "helper__studentprofile").order_by("start_at")
     return render(request, 'elderly_home.html', {
+        "profile": SeniorProfile.objects.get(user=request.user),
         "active_requests": active_requests,
         # 学生が引き受けたら、ホームの表示も自動で切り替わる
         "live": _live(request, "senior"),
@@ -516,6 +520,13 @@ def request_received(request, pk):
 _ACTIVE_STATUSES = [HelpRequest.Status.OPEN, HelpRequest.Status.ACCEPTED]
 
 
+def _active_requests(user):
+    """高齢者の待っている依頼（学生が来る予定のもの＋時間が過ぎていない募集中のもの）"""
+    return HelpRequest.objects.filter(requester=user).filter(
+        Q(status=HelpRequest.Status.ACCEPTED)
+        | Q(status=HelpRequest.Status.OPEN, end_at__gt=timezone.now()))
+
+
 @login_required
 def elderly_status(request):
     """待機画面への入り口: 待っている依頼の数に応じて振り分ける
@@ -525,8 +536,7 @@ def elderly_status(request):
     if response := _senior_only(request):
         return response
 
-    active = list(HelpRequest.objects.filter(
-        requester=request.user, status__in=_ACTIVE_STATUSES).order_by("-created_at")[:2])
+    active = list(_active_requests(request.user).order_by("-created_at")[:2])
     if not active:
         return redirect("elderly_home")
     if len(active) == 1:
@@ -541,8 +551,8 @@ def elderly_request_status(request, pk):
         return response
 
     help_request = get_object_or_404(HelpRequest, pk=pk, requester=request.user)
-    if help_request.status not in _ACTIVE_STATUSES:
-        # 終わった・取り消した依頼は一覧で見る
+    if help_request.status not in _ACTIVE_STATUSES or help_request.is_expired:
+        # 終わった・取り消した・時間が過ぎた依頼は一覧で見る
         return redirect("my_requests")
 
     helper_profile = None
@@ -627,7 +637,8 @@ def student_request_detail(request, pk):
         "help_request": help_request,
         "requester_profile": requester_profile,
         "talk_theme": _talk_theme_text(help_request),
-        "can_accept": help_request.status == HelpRequest.Status.OPEN,
+        "can_accept": (help_request.status == HelpRequest.Status.OPEN
+                       and not help_request.is_expired),
     })
 
 

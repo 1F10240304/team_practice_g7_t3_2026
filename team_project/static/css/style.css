@@ -510,3 +510,11 @@ a.btn-submit {
     margin: 0 0 10px;
     color: #374151;
 }
+
+/* 高齢者ホーム: ログアウト（リンクと同じ見た目のボタン） */
+.home-logout {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}

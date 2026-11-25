@@ -59,6 +59,12 @@ class HelpRequestForm(forms.ModelForm):
         end_time = cleaned_data.get("end_time")
         if start_time and end_time and end_time <= start_time:
             self.add_error("end_time", "終わりの時間は、始まりの時間より後にしてください。")
+        # AIが日にちを読み間違えたときなどに、過ぎた日時で依頼が出ないようにする
+        date = cleaned_data.get("date")
+        if date and start_time:
+            start_at = timezone.make_aware(datetime.combine(date, start_time))
+            if start_at <= timezone.now():
+                self.add_error("date", "過ぎた日時になっています。日にちと時間を見直してください。")
         return cleaned_data
 
     def save(self, commit=True):

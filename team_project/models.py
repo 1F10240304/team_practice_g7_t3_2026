@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 
 class HelpRequest(models.Model):
@@ -41,6 +42,11 @@ class HelpRequest(models.Model):
     # 引き受けた学生が、完了報告で書く「今日教わったこと・気づき」
     learning_memo = models.TextField("学びメモ", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def is_expired(self):
+        """募集中のまま、希望の終わりの時間が過ぎた（来られる学生が見つからなかった）"""
+        return self.status == self.Status.OPEN and self.end_at <= timezone.now()
 
 
 class StudentProfile(models.Model):

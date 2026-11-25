@@ -674,7 +674,9 @@ class ElderlyRequestFlowTests(TestCase):
         self.save_data = {
             "title": "電球の交換をお願いしたいです", "area": "東京都北区",
             "address": "東京都北区赤羽台1-2-3 ひまわり荘101",
-            "date": "2026-11-01", "start_time": "09:00", "end_time": "12:00",
+            # 日にちは固定せず「1週間後」にする（過ぎた日時は保存できないため）
+            "date": (timezone.localdate() + timedelta(days=7)).isoformat(),
+            "start_time": "09:00", "end_time": "12:00",
             "text": "明日の午前中に電球を替えてほしい", "desired_time": "明日 午前中",
         }
 
@@ -1173,7 +1175,9 @@ class ElderlyRequestManageTests(TestCase):
         self.client.force_login(self.senior)
 
     def _create(self, title="電球の交換をお願いしたいです", requester=None, **kwargs):
-        start = timezone.make_aware(datetime(2026, 12, 1, 14, 0))
+        # 日にちは固定せず「1週間後の14時」にする（日付が過ぎてもテストが壊れないように）
+        self.start_day = timezone.localdate() + timedelta(days=7)
+        start = timezone.make_aware(datetime.combine(self.start_day, time(14, 0)))
         return HelpRequest.objects.create(
             title=title, area="東京都北区", start_at=start, end_at=start + timedelta(hours=2),
             requester=requester or self.senior, **kwargs)
@@ -1277,7 +1281,7 @@ class ElderlyRequestManageTests(TestCase):
         self.assertContains(response, "山田太郎 さん")
         self.assertContains(response, "東洋大学")
         self.assertContains(response, "昔の家の明かりの話")
-        self.assertContains(response, "完了（12月1日）")
+        self.assertContains(response, f"完了（{self.start_day.month}月{self.start_day.day}日）")
         self.assertNotContains(response, "買い物をお願いしたいです")
 
     def test_記録にほかの人の依頼は出ない(self):
@@ -1317,7 +1321,8 @@ class ElderlyRequestManageTests(TestCase):
         done = self._create(status=HelpRequest.Status.DONE, helper=self.student)
         self.client.post(reverse("save_request"), {
             "title": done.title, "area": done.area, "address": "東京都北区赤羽台1-2-3",
-            "date": "2026-12-10", "start_time": "14:00", "end_time": "16:00",
+            "date": (timezone.localdate() + timedelta(days=10)).isoformat(),
+            "start_time": "14:00", "end_time": "16:00",
         })
         self.assertEqual(HelpRequest.objects.filter(title=done.title).count(), 2)
         new = HelpRequest.objects.latest("created_at")
@@ -1414,6 +1419,136 @@ class LiveUpdateTests(TestCase):
                 self.assertContains(response, 'id="live-update"')
                 self.assertContains(response, reverse("live_version", args=[kind]))
                 self.assertContains(response, "js/live_update.js")
+
+
+class ExpiredRequestTests(TestCase):
+    """過ぎた日時の依頼は出せない・時間が過ぎても見つからなかった依頼は募集から外れる"""
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.student = User.objects.create_user(username="student", password="pass")
+        StudentProfile.objects.create(user=self.student, name="山田太郎", university="東洋大学")
+        now = timezone.now()
+        # 昨日の依頼（募集中のまま時間が過ぎた）
+        self.expired = HelpRequest.objects.create(
+            title="昨日のお願い", area="東京都北区", requester=self.senior,
+            start_at=now - timedelta(days=1), end_at=now - timedelta(days=1, hours=-2))
+        # 明日の依頼
+        self.future = HelpRequest.objects.create(
+            title="明日のお願い", area="東京都北区", requester=self.senior,
+            start_at=now + timedelta(days=1), end_at=now + timedelta(days=1, hours=2))
+
+    # ---- 過ぎた日時は保存できない
+    def _save(self, day, start="09:00", end="12:00"):
+        self.client.force_login(self.senior)
+        return self.client.post(reverse("save_request"), {
+            "title": "電球の交換をお願いしたいです", "area": "東京都北区",
+            "address": "東京都北区赤羽台1-2-3",
+            "date": day.isoformat(), "start_time": start, "end_time": end,
+        })
+
+    def test_過ぎた日にちでは保存できない(self):
+        response = self._save(timezone.localdate() - timedelta(days=1))
+        self.assertContains(response, "過ぎた日時になっています。")
+        self.assertEqual(HelpRequest.objects.filter(title="電球の交換をお願いしたいです").count(), 0)
+
+    def test_今日でも過ぎた時間では保存できない(self):
+        now = timezone.localtime()
+        with mock.patch("django.utils.timezone.now",
+                        return_value=now.replace(hour=15, minute=0, second=0, microsecond=0)):
+            response = self._save(now.date(), "09:00", "12:00")
+        self.assertContains(response, "過ぎた日時になっています。")
+
+    def test_これからの日時なら保存できる(self):
+        response = self._save(timezone.localdate() + timedelta(days=1))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(HelpRequest.objects.filter(title="電球の交換をお願いしたいです").exists())
+
+    # ---- 時間が過ぎた依頼の扱い
+    def test_期限切れかどうか(self):
+        self.assertTrue(self.expired.is_expired)
+        self.assertFalse(self.future.is_expired)
+        # 引き受けられた依頼は、時間が過ぎても「見つからなかった」にはならない
+        self.expired.status = HelpRequest.Status.ACCEPTED
+        self.assertFalse(self.expired.is_expired)
+
+    def test_学生の一覧に時間が過ぎた依頼は出ない(self):
+        self.client.force_login(self.student)
+        for name in ["student_home", "request_list"]:
+            with self.subTest(name=name):
+                response = self.client.get(reverse(name))
+                self.assertContains(response, "明日のお願い")
+                self.assertNotContains(response, "昨日のお願い")
+
+    def test_時間が過ぎた依頼は引き受けられない(self):
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("accept_request", args=[self.expired.pk]), follow=True)
+        self.assertContains(response, "この依頼は希望の時間が過ぎています。")
+        self.expired.refresh_from_db()
+        self.assertEqual((self.expired.status, self.expired.helper), (HelpRequest.Status.OPEN, None))
+
+    def test_時間が過ぎた依頼の詳細には引き受けボタンが出ない(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student_request_detail", args=[self.expired.pk]))
+        self.assertNotContains(response, reverse("accept_request", args=[self.expired.pk]))
+
+    def test_高齢者の一覧では見つからなかったと出てもう一度頼める(self):
+        self.client.force_login(self.senior)
+        response = self.client.get(reverse("my_requests"))
+        self.assertContains(response, "来られる学生が見つかりませんでした")
+        self.assertContains(response, f'href="{reverse("request_again", args=[self.expired.pk])}"')
+
+    def test_時間が過ぎた依頼は待っている数に入らない(self):
+        self.client.force_login(self.senior)
+        # 待っているのは明日の1件だけなので、その待機画面へ
+        self.assertRedirects(self.client.get(reverse("elderly_status")),
+                             reverse("elderly_request_status", args=[self.future.pk]))
+
+    def test_時間が過ぎた依頼の待機画面は一覧へ(self):
+        self.client.force_login(self.senior)
+        self.assertRedirects(
+            self.client.get(reverse("elderly_request_status", args=[self.expired.pk])),
+            reverse("my_requests"))
+
+
+class ElderlyHomeTests(TestCase):
+    """高齢者ホーム: 名前で声をかける・待っているお願いを知らせる・ログアウトできる"""
+
+    def setUp(self):
+        self.senior = User.objects.create_user(username="senior", password="pass")
+        SeniorProfile.objects.create(user=self.senior, name="佐藤一郎", area="東京都北区")
+        self.client.force_login(self.senior)
+
+    def _create(self, days, title="電球の交換", **kwargs):
+        start = timezone.now() + timedelta(days=days)
+        return HelpRequest.objects.create(
+            title=title, area="東京都北区", requester=self.senior,
+            start_at=start, end_at=start + timedelta(hours=2), **kwargs)
+
+    def test_名前で声をかける(self):
+        self.assertContains(self.client.get(reverse("elderly_home")), "佐藤一郎さん、こんにちは！")
+
+    def test_待っているお願いがなければいまのお願いは出ない(self):
+        self.assertNotContains(self.client.get(reverse("elderly_home")), "いまのお願い</h3>")
+
+    def test_いまのお願いに時間切れと取り消しは出ない(self):
+        waiting = self._create(1, title="明日のお願い")
+        self._create(-3, title="時間が過ぎたお願い")
+        self._create(3, title="取り消したお願い", status=HelpRequest.Status.CANCELED)
+        response = self.client.get(reverse("elderly_home"))
+        self.assertContains(response, "いまのお願い</h3>")
+        self.assertContains(response, "明日のお願い")
+        self.assertContains(response, f'href="{reverse("elderly_request_status", args=[waiting.pk])}"')
+        self.assertNotContains(response, "時間が過ぎたお願い")
+        self.assertNotContains(response, "取り消したお願い")
+
+    def test_ログアウトボタンがあり押すとログアウトする(self):
+        response = self.client.get(reverse("elderly_home"))
+        self.assertContains(response, f'action="{reverse("logout")}"')
+        self.assertNotContains(response, "役割選択に戻る")
+        self.client.post(reverse("logout"))
+        self.assertEqual(self.client.get(reverse("elderly_home")).status_code, 302)
 
 
 class ChatTests(TestCase):
